@@ -15,5 +15,5 @@ app.add_middleware(
 
 app.include_router(precios_router.router)
 
-# La ruta correcta
+
 app.mount("/", StaticFiles(directory="../fronted", html=True), name="frontend")

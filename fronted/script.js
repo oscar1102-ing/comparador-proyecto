@@ -350,11 +350,11 @@ async function cargarDetalle() {
     const res = await fetch(`/producto?nombre=${nombre}`);
     const data = await res.json();
 
-    // INFO PRINCIPAL
+
     document.getElementById("nombre").innerText = data.producto.nombre;
     document.getElementById("imagen").src = data.producto.imagen;
 
-    // TIENDAS
+
     const tiendasDiv = document.getElementById("tiendas");
     tiendasDiv.innerHTML = "";
 
@@ -364,7 +364,6 @@ async function cargarDetalle() {
         `;
     });
 
-    // SIMILARES
     const similaresDiv = document.getElementById("similares");
     similaresDiv.innerHTML = "";
 

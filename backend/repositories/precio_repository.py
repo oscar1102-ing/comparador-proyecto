@@ -75,8 +75,8 @@ def obtener_precios_producto(producto: str):
         productos.append({
             "nombre": fila[0],
             "tienda": fila[1],
-            "precio": float(fila[2]),  # importante para JSON
-            "imagen": "https://via.placeholder.com/150"  # temporal
+            "precio": float(fila[2]),  
+            "imagen": "https://via.placeholder.com/150"  
         })
 
     return productos
