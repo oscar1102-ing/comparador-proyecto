@@ -69,7 +69,6 @@ def obtener_precios_producto(producto: str):
     cursor.close()
     conexion.close()
 
-    # 🔥 AQUÍ ESTÁ LA CLAVE
     productos = []
     for fila in resultado:
         productos.append({
