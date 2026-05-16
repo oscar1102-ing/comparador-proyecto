@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+</header>
+<main class="auth-container">
+    <div class="auth-card">
+        <h2>Verificación</h2>
+        <p id="mensaje-info" style="color:#888; text-align:center;"></p>
+        <form id="mfaForm">
+            <input type="text" id="codigo" placeholder="Código de 6 dígitos" 
+                   maxlength="6" required style="text-align:center; 
+                   font-size: 24px; letter-spacing: 8px;">
+            <button type="submit">Verificar</button>
+        </form>
+        <div id="mensajeMFA"></div>
+    </div>
+</main>
+<script src="verificar-mfa.js"></script>
+</body>
+</html>

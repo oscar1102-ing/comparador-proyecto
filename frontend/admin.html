@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+        .admin-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
+                   background: #f1f5f9; color: #64748b; font-size: 14px; font-weight: bold; }
+        .tab-btn.activo { background: #ff6b00; color: white; }
+        .tab-content { display: none; }
+        .tab-content.activo { display: block; }
+        .admin-card { background: white; border-radius: 12px; padding: 24px;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .admin-form { display: flex; flex-direction: column; gap: 12px; max-width: 500px; }
+        .admin-form input, .admin-form select {
+            padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .admin-form button { padding: 10px; background: #ff6b00; color: white;
+                             border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .admin-table th { background: #f8fafc; padding: 10px 14px; text-align: left;
+                          font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+        .admin-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .btn-eliminar { background: #ef4444; color: white; border: none; padding: 5px 10px;
+                        border-radius: 6px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+    <div class="auth-buttons"></div>
+</header>
+
+<main class="admin-container">
+    <h2>⚙️ Panel de Administración</h2>
+
+    <div class="admin-tabs">
+        <button class="tab-btn activo" onclick="mostrarTab('productos')">📦 Productos</button>
+        <button class="tab-btn" onclick="mostrarTab('tiendas')">🏪 Tiendas</button>
+        <button class="tab-btn" onclick="mostrarTab('usuarios')">👥 Usuarios</button>
+    </div>
+
+    <!-- TAB PRODUCTOS -->
+    <div id="tab-productos" class="tab-content activo">
+        <div class="admin-card">
+            <h3>Agregar producto</h3>
+            <div class="admin-form">
+                <input type="text" id="prod-nombre" placeholder="Nombre del producto">
+                <input type="text" id="prod-descripcion" placeholder="Descripción">
+                <select id="prod-categoria">
+                    <option value="">-- Categoría --</option>
+                </select>
+                <select id="prod-marca">
+                    <option value="">-- Marca --</option>
+                </select>
+                <input type="number" id="prod-precio" placeholder="Precio">
+                <select id="prod-tienda">
+                    <option value="">-- Tienda --</option>
+                </select>
+                <button onclick="crearProducto()">➕ Agregar producto</button>
+            </div>
+        </div>
+        <div class="admin-card">
+            <h3>Productos registrados</h3>
+            <div id="lista-productos-admin"><p>Cargando...</p></div>
+        </div>
+    </div>
+
+    <!-- TAB TIENDAS -->
+    <div id="tab-tiendas" class="tab-content">
+        <div class="admin-card">
+            <h3>Agregar tienda</h3>
+            <div class="admin-form">
+                <input type="text" id="tienda-nombre" placeholder="Nombre de la tienda">
+                <input type="text" id="tienda-url" placeholder="URL de la tienda">
+                <button onclick="crearTienda()">➕ Agregar tienda</button>
+            </div>
+        </div>
+        <div class="admin-card">
+            <h3>Tiendas registradas</h3>
+            <div id="lista-tiendas-admin"><p>Cargando...</p></div>
+        </div>
+    </div>
+
+    <!-- TAB USUARIOS -->
+    <div id="tab-usuarios" class="tab-content">
+        <div class="admin-card">
+            <h3>Usuarios registrados</h3>
+            <div id="lista-usuarios-admin"><p>Cargando...</p></div>
+        </div>
+    </div>
+</main>
+
+<script src="script.js"></script>
+<script>
+const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+if (!usuario || usuario.rol !== "admin") {
+    window.location.href = "/index.html";
+}
+
+const API = "http://127.0.0.1:8000";
+
+function mostrarTab(tab) {
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("activo"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("activo"));
+    document.getElementById(`tab-${tab}`).classList.add("activo");
+    event.target.classList.add("activo");
+    if (tab === "productos") cargarProductosAdmin();
+    if (tab === "tiendas") cargarTiendasAdmin();
+    if (tab === "usuarios") cargarUsuariosAdmin();
+}
+
+// ── PRODUCTOS ──
+async function cargarProductosAdmin() {
+    const res = await fetch(`${API}/productos?q=`);
+    const data = await res.json();
+    const contenedor = document.getElementById("lista-productos-admin");
+    if (data.length === 0) { contenedor.innerHTML = "<p>Sin productos.</p>"; return; }
+    contenedor.innerHTML = `
+        <table class="admin-table">
+            <thead><tr><th>ID</th><th>Nombre</th><th>Tienda</th><th>Precio</th><th>Acción</th></tr></thead>
+            <tbody>${data.map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.tienda}</td>
+                    <td>$${p.precio}</td>
+                    <td><button class="btn-eliminar" onclick="eliminarProducto(${p.id})">🗑 Eliminar</button></td>
+                </tr>
+            `).join("")}</tbody>
+        </table>
+    `;
+}
+
+async function crearProducto() {
+    const datos = {
+        nombre: document.getElementById("prod-nombre").value,
+        descripcion: document.getElementById("prod-descripcion").value,
+        categoria_id: parseInt(document.getElementById("prod-categoria").value),
+        marca_id: parseInt(document.getElementById("prod-marca").value),
+        precio: parseFloat(document.getElementById("prod-precio").value),
+        tienda_id: parseInt(document.getElementById("prod-tienda").value)
+    };
+
+    if (!datos.nombre || !datos.categoria_id || !datos.marca_id || !datos.tienda_id) {
+        mostrarToast("Completa todos los campos", "error");
+        return;
+    }
+
+    const res = await fetch(`${API}/productos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+    });
+    const data = await res.json();
+    if (res.ok) {
+        mostrarToast("Producto creado");
+        cargarProductosAdmin();
+    } else {
+        mostrarToast(data.detail || "Error", "error");
+    }
+}
+
+async function eliminarProducto(id) {
+    const res = await fetch(`${API}/productos/${id}`, { method: "DELETE" });
+    if (res.ok) { mostrarToast("Producto eliminado", "info"); cargarProductosAdmin(); }
+}
+
+// ── TIENDAS ──
+async function cargarTiendasAdmin() {
+    const res = await fetch(`${API}/tiendas`);
+    const data = await res.json();
+    const contenedor = document.getElementById("lista-tiendas-admin");
+    if (!data.length) { contenedor.innerHTML = "<p>Sin tiendas.</p>"; return; }
+    contenedor.innerHTML = `
+        <table class="admin-table">
+            <thead><tr><th>ID</th><th>Nombre</th></tr></thead>
+            <tbody>${data.map(t => `
+                <tr><td>${t.id}</td><td>${t.nombre}</td></tr>
+            `).join("")}</tbody>
+        </table>
+    `;
+}
+
+async function crearTienda() {
+    const datos = {
+        nombre: document.getElementById("tienda-nombre").value,
+        url: document.getElementById("tienda-url").value
+    };
+    const res = await fetch(`${API}/tiendas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+    });
+    if (res.ok) { mostrarToast("Tienda creada"); cargarTiendasAdmin(); }
+    else mostrarToast("Error al crear tienda", "error");
+}
+
+// ── USUARIOS ──
+async function cargarUsuariosAdmin() {
+    const res = await fetch(`${API}/admin/usuarios`);
+    const data = await res.json();
+    const contenedor = document.getElementById("lista-usuarios-admin");
+    contenedor.innerHTML = `
+        <table class="admin-table">
+            <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Registro</th></tr></thead>
+            <tbody>${data.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.nombre}</td>
+                    <td>${u.email}</td>
+                    <td><span style="background:${u.rol==='admin'?'#ff6b00':'#e2e8f0'};
+                        color:${u.rol==='admin'?'white':'#64748b'};
+                        padding:2px 8px; border-radius:4px; font-size:12px;">${u.rol}</span></td>
+                    <td>${new Date(u.fecha_registro).toLocaleDateString("es-CO")}</td>
+                </tr>
+            `).join("")}</tbody>
+        </table>
+    `;
+}
+
+async function cargarSelects() {
+    const [cats, marcas, tiendas] = await Promise.all([
+        fetch(`${API}/categorias`).then(r => r.json()),
+        fetch(`${API}/marcas`).then(r => r.json()),
+        fetch(`${API}/tiendas`).then(r => r.json())
+    ]);
+
+    const selCat = document.getElementById("prod-categoria");
+    cats.forEach(c => selCat.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+
+    const selMarca = document.getElementById("prod-marca");
+    marcas.forEach(m => selMarca.innerHTML += `<option value="${m.id}">${m.nombre}</option>`);
+
+    const selTienda = document.getElementById("prod-tienda");
+    tiendas.forEach(t => selTienda.innerHTML += `<option value="${t.id}">${t.nombre}</option>`);
+}
+
+cargarSelects();
+cargarProductosAdmin();
+</script>
+</body>
+</html>

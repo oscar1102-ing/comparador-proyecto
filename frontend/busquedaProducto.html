@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+    <head>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Resultados de búsqueda</title>
+
+        <link rel="icon" href="imagenes/logo1.png">
+        <link rel="stylesheet" href="styles.css">
+
+    </head>
+
+    <body>
+
+        <header>
+
+            <div class="logo">
+                <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+            </div>
+
+            <form class="buscador" action="busquedaProducto.html" method="GET">
+
+                <input type="search" name="q" placeholder="Buscar productos..." required>
+
+                <button type="submit">Buscar</button>
+
+            </form>
+            
+            <div class="auth-buttons"></div>
+
+        </header>
+
+        <nav>
+
+            <ul>
+                <li><a href="busquedaProducto.html?categoria=tecnologia">Tecnología</a></li>
+                <li><a href="busquedaProducto.html?categoria=electrodomesticos">Electrodomésticos</a></li>
+                <li><a href="busquedaProducto.html?categoria=celulares">Celulares</a></li>
+                <li><a href="busquedaProducto.html?categoria=computadores">Computadores</a></li>
+                <li><a href="busquedaProducto.html?categoria=accesorios">Accesorios</a></li>
+            </ul>
+
+        </nav>
+
+        <main>
+
+            <section class="encabezado-busqueda">
+
+                <div class="info-busqueda">
+
+                    <h2 id="texto-busqueda"></h2>
+                    <span id="cantidad-resultados"></span>
+
+                </div>
+
+                <button class="btn-filtros">Filtros</button>
+
+            </section>
+
+            <section class="lista-productos" id="lista-productos"></section>
+
+            <p id="sin-resultados" style="display:none;">
+                No se encontraron productos
+            </p>
+
+            <section class="paginacion" id="paginacion"></section>
+
+        </main>
+
+        <footer>
+
+            <p>© 2026 PriceCompare</p>
+            <p>Comparador de precios de tiendas online</p>
+
+        </footer>
+
+        <div class="overlay" id="overlay"></div>
+
+        <aside class="panel-filtros" id="panelFiltros">
+
+            <div class="filtros-header">
+                <h3>Filtros</h3>
+                <button id="cerrarFiltros">✕</button>
+            </div>
+
+            <div class="filtro">
+
+                <h4 class="toggle-filtro">Categoría +</h4>
+
+                <div class="contenido-filtro">
+
+                    <label><input type="checkbox" class="filtro-categoria" value="tecnologia"> Tecnología</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="celulares"> Celulares</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="computadores"> Computadores</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="electrodomesticos"> Electrodomésticos</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="accesorios">Accesorios</label>
+
+                </div>
+
+            </div>
+
+            <div class="filtro">
+
+                <h4 class="toggle-filtro">Tiendas +</h4>
+
+                <div class="contenido-filtro">
+
+                    <label><input type="checkbox" class="filtro-tienda" value="amazon"> Amazon</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="ebay"> eBay</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="walmart"> Walmart</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="bestbuy"> BestBuy</label>
+
+                </div>
+
+            </div>
+
+            <div class="filtro">
+
+                <h4 class="toggle-filtro">Precio +</h4>
+
+                <div class="contenido-filtro">
+
+                    <div class="precio-inputs">
+
+                        <input type="number" id="precioMin" placeholder="Min">
+
+                        <span>-</span>
+
+                        <input type="number" id="precioMax" placeholder="Max">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button class="aplicar-filtros">Aplicar filtros</button>
+
+        </aside>
+
+        <script src="script.js"></script>
+
+    </body>
+
+</html>
