@@ -1,0 +1,17 @@
+                                          Table "public.usuarios"
+     Column     |            Type             | Collation | Nullable |               Default                
+----------------+-----------------------------+-----------+----------+--------------------------------------
+ id             | integer                     |           | not null | nextval('usuarios_id_seq'::regclass)
+ nombre         | character varying(100)      |           | not null | 
+ email          | character varying(150)      |           | not null | 
+ password       | character varying(255)      |           | not null | 
+ fecha_registro | timestamp without time zone |           |          | CURRENT_TIMESTAMP
+Indexes:
+    "usuarios_pkey" PRIMARY KEY, btree (id)
+    "usuarios_email_key" UNIQUE CONSTRAINT, btree (email)
+Referenced by:
+    TABLE "codigos_verificacion" CONSTRAINT "codigos_verificacion_usuario_id_fkey" FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    TABLE "comparaciones_guardadas" CONSTRAINT "comparaciones_guardadas_usuario_id_fkey" FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    TABLE "favoritos" CONSTRAINT "favoritos_usuario_id_fkey" FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    TABLE "historial_busquedas" CONSTRAINT "historial_busquedas_usuario_id_fkey" FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+

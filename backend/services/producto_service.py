@@ -1,10 +1,7 @@
 import repositories.producto_repository as producto_repository
 
-def crear_producto(nombre: str, categoria: str):
-
-    producto = producto_repository.crear_producto(nombre, categoria)
-
-    return producto
+def crear_producto(datos):
+    return producto_repository.crear_producto(datos)
 
 def obtener_producto(nombre: str):
 
@@ -38,3 +35,9 @@ def obtener_detalle_producto(nombre: str):
         "tiendas": tiendas,
         "similares": similares
     }
+    
+def eliminar_producto(id: int):
+    return producto_repository.eliminar_producto(id)
+
+def actualizar_producto(id: int, datos):
+    return producto_repository.actualizar_producto(id, datos)

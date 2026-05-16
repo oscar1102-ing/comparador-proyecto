@@ -22,11 +22,17 @@ def obtener_productos_top():
     cursor = conexion.cursor()
 
     consulta = """
-    SELECT p.nombre, t.nombre, pr.precio
-    FROM precios pr
-    JOIN productos p ON pr.producto_id = p.id_producto
-    JOIN tiendas t ON pr.tienda_id = t.id_tienda
-    ORDER BY pr.precio ASC
+    SELECT 
+        p.id,
+        p.nombre,
+        p.imagen_url,
+        t.nombre,
+        MIN(pr.precio) as precio_minimo
+    FROM productos p
+    JOIN precios pr ON pr.producto_id = p.id
+    JOIN tiendas t ON pr.tienda_id = t.id
+    GROUP BY p.id, p.nombre, p.imagen_url, t.nombre
+    ORDER BY precio_minimo ASC
     LIMIT 10
     """
 
@@ -37,12 +43,14 @@ def obtener_productos_top():
     conexion.close()
 
     productos = []
+
     for fila in resultado:
         productos.append({
-            "nombre": fila[0],
-            "tienda": fila[1],
-            "precio": float(fila[2]),
-            "imagen": "https://via.placeholder.com/150"
+            "id": fila[0],
+            "nombre": fila[1],
+            "imagen": fila[2],
+            "tienda": fila[3],
+            "precio": float(fila[4])
         })
 
     return productos
@@ -55,27 +63,34 @@ def obtener_precios_producto(producto: str):
     producto_normalizado = producto.lower().strip().replace(" ", "")
 
     consulta = """
-    SELECT p.nombre, t.nombre, pr.precio
+    SELECT
+	    p.id, 
+        p.nombre,
+        t.nombre,
+        pr.precio,
+        p.imagen_url
     FROM precios pr
-    JOIN productos p ON pr.producto_id = p.id_producto
-    JOIN tiendas t ON pr.tienda_id = t.id_tienda
-    WHERE LOWER(REPLACE(p.nombre, ' ', '')) = %s
+    JOIN productos p ON pr.producto_id = p.id
+    JOIN tiendas t ON pr.tienda_id = t.id
+    WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
     ORDER BY pr.precio ASC
     """
 
-    cursor.execute(consulta, (producto_normalizado,))
+    cursor.execute(consulta, (f"%{producto_normalizado}%",))
     resultado = cursor.fetchall()
 
     cursor.close()
     conexion.close()
 
     productos = []
+
     for fila in resultado:
         productos.append({
-            "nombre": fila[0],
-            "tienda": fila[1],
-            "precio": float(fila[2]),  
-            "imagen": "https://via.placeholder.com/150"  
+	        "id": fila[0],
+            "nombre": fila[1],
+            "tienda": fila[2],
+            "precio": float(fila[3]),
+            "imagen": fila[4]
         })
 
     return productos

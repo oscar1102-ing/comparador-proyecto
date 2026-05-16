@@ -1,10 +1,7 @@
 import repositories.tienda_repository as tienda_repository
 
-def crear_tienda(nombre: str):
-
-    tienda = tienda_repository.crear_tienda(nombre)
-
-    return tienda
+def crear_tienda(datos):
+    return tienda_repository.crear_tienda(datos)
 
 def obtener_tienda(nombre: str):
 

@@ -1,29 +1,25 @@
 from database import conectar_base
 
-def crear_tienda(nombre: str):
-
+def crear_tienda(datos):
     conexion = conectar_base()
     cursor = conexion.cursor()
-
-    consulta = """
-    INSERT INTO tiendas(nombre)
-    VALUES(%s)
-    """
-
-    cursor.execute(consulta,(nombre,))
+    cursor.execute("""
+        INSERT INTO tiendas(nombre, sitio_web)
+        VALUES(%s, %s)
+        RETURNING id, nombre
+    """, (datos.nombre, datos.url))
+    tienda = cursor.fetchone()
     conexion.commit()
-
     cursor.close()
     conexion.close()
-
-    return {"mensaje": "tienda creada"}
+    return {"mensaje": "Tienda creada", "id": tienda[0], "nombre": tienda[1]}
 
 def obtener_tienda_nombre(nombre: str):
     conexion = conectar_base()
     cursor = conexion.cursor()
 
     consulta = """
-    SELECT id_tienda
+    SELECT id
     FROM tiendas
     WHERE nombre = %s
     """
@@ -62,8 +58,8 @@ def obtener_tiendas_producto(nombre: str):
     consulta = """
     SELECT t.nombre, pr.precio
     FROM precios pr
-    JOIN productos p ON pr.producto_id = p.id_producto
-    JOIN tiendas t ON pr.tienda_id = t.id_tienda
+    JOIN productos p ON pr.producto_id = p.id
+    JOIN tiendas t ON pr.tienda_id = t.id
     WHERE LOWER(REPLACE(p.nombre, ' ', '')) = %s
     ORDER BY pr.precio ASC
     """

@@ -19,4 +19,3 @@ app.include_router(precios_router.router)
 
 
 
-app.mount("/", StaticFiles(directory="../fronted", html=True), name="frontend")
