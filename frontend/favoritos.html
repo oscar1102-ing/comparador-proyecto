@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Favoritos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+    <form class="buscador" action="busquedaProducto.html" method="GET">
+        <input type="search" name="q" placeholder="Buscar productos..." required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div class="auth-buttons"></div>
+</header>
+
+<main>
+    <section style="padding: 20px;">
+        <h2>⭐ Mis Favoritos</h2>
+        <div id="lista-favoritos" class="lista-productos">
+            <p>Cargando...</p>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>© 2026 PriceCompare</p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+
+if (!usuario) {
+    window.location.href = "/login.html";
+}
+
+async function cargarFavoritos() {
+    const contenedor = document.getElementById("lista-favoritos");
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/favoritos/${usuario.id}`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+            contenedor.innerHTML = "<p>No tienes productos favoritos aún.</p>";
+            return;
+        }
+
+        contenedor.innerHTML = "";
+        data.forEach(fav => {
+            contenedor.innerHTML += `
+                <article class="producto-busqueda">
+                    <img src="${fav.imagen || 'imagenes/logo1.png'}" alt="${fav.nombre}">
+                    <div class="info-producto-busqueda">
+                        <h3>${fav.nombre}</h3>
+                        <p class="precio">${fav.precio_minimo ? '$' + fav.precio_minimo : 'Sin precio'}</p>
+                        <a href="producto.html?nombre=${fav.nombre}">Ver producto</a>
+                        <button onclick="eliminarFavorito(${fav.favorito_id}, this)" 
+                            style="margin-top:8px; background:#e74c3c; color:white; border:none; 
+                                   padding:6px 12px; border-radius:4px; cursor:pointer;">
+                            🗑 Quitar
+                        </button>
+                    </div>
+                </article>
+            `;
+        });
+    } catch (err) {
+        contenedor.innerHTML = "<p>Error al cargar favoritos.</p>";
+    }
+}
+
+async function eliminarFavorito(favoritoId, btn) {
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/favoritos/${favoritoId}?usuario_id=${usuario.id}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            btn.closest("article").remove();
+        }
+    } catch (err) {
+        alert("Error al eliminar");
+    }
+}
+
+cargarFavoritos();
+</script>
+</body>
+</html>

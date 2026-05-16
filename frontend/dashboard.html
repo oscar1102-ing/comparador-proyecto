@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi cuenta</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+    <form class="buscador" action="busquedaProducto.html" method="GET">
+        <input type="search" name="q" placeholder="Buscar productos..." required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div class="auth-buttons"></div>
+</header>
+
+<main class="auth-container">
+    <div class="auth-card" style="max-width: 600px;">
+
+        <div id="perfil-header" style="text-align:center; margin-bottom: 24px;">
+            <div style="font-size: 64px;">👤</div>
+            <h2 id="dash-nombre"></h2>
+            <p id="dash-email" style="color: #888;"></p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="favoritos.html" class="btn-auth" style="text-align:center; padding: 12px;">
+                ⭐ Mis favoritos
+            </a>
+            <a href="historial.html" class="btn-auth" style="text-align:center; padding: 12px;">
+                🕐 Mi historial
+            </a>
+            <button onclick="cerrarSesion()" class="btn-auth" 
+                style="background: #e74c3c; text-align:center; padding: 12px; border: none; cursor: pointer; width: 100%;">
+                🚪 Cerrar sesión
+            </button>
+        </div>
+
+    </div>
+</main>
+
+<script src="script.js"></script>
+<script>
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+
+    if (!usuario) {
+        window.location.href = "/login.html";
+    } else {
+        document.getElementById("dash-nombre").textContent = usuario.nombre;
+        document.getElementById("dash-email").textContent = usuario.email;
+    }
+</script>
+
+</body>
+</html>

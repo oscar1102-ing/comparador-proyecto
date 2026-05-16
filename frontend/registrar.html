@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        <a href="index.html">
+            <img src="imagenes/logo1.png" alt="logo">
+        </a>
+    </div>
+</header>
+
+<main class="auth-container">
+
+    <div class="auth-card">
+
+        <h2>Registro</h2>
+
+        <!-- Agregamos ID a los inputs para poder identificarlos -->
+        <form id="registerForm">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="email" id="email" placeholder="Correo" required>
+            <input type="number" id="edad" placeholder="Edad" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            
+            <!-- Agregamos un campo para confirmar contraseña (opcional pero recomendado) -->
+            <input type="password" id="confirmPassword" placeholder="Confirmar contraseña" required>
+
+            <button type="submit">Crear cuenta</button>
+        </form>
+
+        <!-- Contenedor para mostrar mensajes de error o éxito -->
+        <div id="mensajeRegistro" style="margin-top: 15px; display: none;"></div>
+
+        <p>
+            ¿Ya tienes cuenta?
+            <a href="login.html">Inicia sesión</a>
+        </p>
+
+    </div>
+
+</main>
+
+<!-- Agregamos script específico para registro -->
+<script src="registro.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<header>
+    <div class="logo">
+        <a href="index.html">
+            <img src="imagenes/logo1.png" alt="logo">
+        </a>
+    </div>
+</header>
+
+<!-- login.html — versión corregida -->
+<main class="auth-container">
+    <div class="auth-card">
+        <h2>Iniciar sesión</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Correo" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <div id="mensajeLogin"></div>
+        <p>¿No tienes cuenta? <a href="registrar.html">Regístrate</a></p>
+    </div>
+</main>
+
+<!-- IMPORTANTE: agregar el script -->
+<script src="login.js"></script>
+
+</body>
+</html>
