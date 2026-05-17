@@ -41,7 +41,7 @@ if (!usuario) {
 async function cargarFavoritos() {
     const contenedor = document.getElementById("lista-favoritos");
     try {
-        const res = await fetch(`http://127.0.0.1:8000/favoritos/${usuario.id}`);
+        const res = await fetch(`/api/favoritos/${usuario.id}`);
         const data = await res.json();
 
         if (data.length === 0) {
@@ -74,7 +74,7 @@ async function cargarFavoritos() {
 
 async function eliminarFavorito(favoritoId, btn) {
     try {
-        const res = await fetch(`http://127.0.0.1:8000/favoritos/${favoritoId}?usuario_id=${usuario.id}`, {
+        const res = await fetch(`/api/favoritos/${favoritoId}?usuario_id=${usuario.id}`, {
             method: "DELETE"
         });
         if (res.ok) {
