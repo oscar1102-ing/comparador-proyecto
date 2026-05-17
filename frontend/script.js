@@ -286,7 +286,7 @@ async function cargarProductos() {
     
     const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
     if (usuario && busqueda.trim()) {
-        fetch("http://127.0.0.1:8000/historial/guardar", {
+        fetch("/api/historial/guardar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ usuario_id: usuario.id, busqueda: busqueda })
@@ -446,7 +446,7 @@ async function agregarFavorito(productoId, nombreProducto, botonId) {
     }
 
     try {
-        const res = await fetch("http://127.0.0.1:8000/favoritos/toggle", {
+        const res = await fetch("/api/favoritos/toggle", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ usuario_id: usuario.id, producto_id: productoId })

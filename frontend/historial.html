@@ -39,7 +39,7 @@ if (!usuario) window.location.href = "/login.html";
 async function cargarHistorial() {
     const contenedor = document.getElementById("lista-historial");
     try {
-        const res = await fetch(`http://127.0.0.1:8000/historial/usuario/${usuario.id}`);
+        const res = await fetch(`/api/historial/usuario/${usuario.id}`);
         const data = await res.json();
 
         if (data.length === 0) {

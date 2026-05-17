@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 🔥 IMPORTANTE: Llamar DIRECTAMENTE a FastAPI (evitando el proxy)
-            const API_URL = "http://127.0.0.1:8000/registro";
+            const API_URL = "/api/registro";
             
             const datosRegistro = {
                 nombre: nombre,

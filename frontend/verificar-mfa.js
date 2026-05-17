@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const codigo = document.getElementById("codigo").value.trim();
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/verificar-mfa", {
+            const res = await fetch("/api/verificar-mfa", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ usuario_id: parseInt(usuarioId), codigo })
