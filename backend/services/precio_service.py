@@ -21,11 +21,8 @@ def registrar_precio(producto, tienda, precio):
 
     return precio_repository.guardar_precio(id_producto, id_tienda, precio)
 
-def comparar_precios_producto(producto: str):
-
-    precios = precio_repository.obtener_precios_producto(producto)
-
-    return precios
+def comparar_precios_producto(producto: str, pagina: int = 1, por_pagina: int = 10):
+    return precio_repository.obtener_precios_producto(producto, pagina, por_pagina)
 
 
 def obtener_top_productos():
