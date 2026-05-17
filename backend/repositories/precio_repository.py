@@ -56,44 +56,54 @@ def obtener_productos_top():
     return productos
 
 
-def obtener_precios_producto(producto: str):
+def obtener_precios_producto(producto: str, pagina: int = 1, por_pagina: int = 10):
     conexion = conectar_base()
     cursor = conexion.cursor()
-
     producto_normalizado = producto.lower().strip().replace(" ", "")
+    
+    # Contar total de resultados
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM precios pr
+        JOIN productos p ON pr.producto_id = p.id
+        JOIN tiendas t ON pr.tienda_id = t.id
+        WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
+    """, (f"%{producto_normalizado}%",))
+    total = cursor.fetchone()[0]
 
+    # Traer solo los de esta página
+    offset = (pagina - 1) * por_pagina
     consulta = """
-    SELECT
-	    p.id, 
-        p.nombre,
-        t.nombre,
-        pr.precio,
-        p.imagen_url
+    SELECT p.id, p.nombre, t.nombre, pr.precio, p.imagen_url
     FROM precios pr
     JOIN productos p ON pr.producto_id = p.id
     JOIN tiendas t ON pr.tienda_id = t.id
     WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
     ORDER BY pr.precio ASC
+    LIMIT %s OFFSET %s
     """
-
-    cursor.execute(consulta, (f"%{producto_normalizado}%",))
+    cursor.execute(consulta, (f"%{producto_normalizado}%", por_pagina, offset))
     resultado = cursor.fetchall()
-
     cursor.close()
     conexion.close()
 
     productos = []
-
     for fila in resultado:
         productos.append({
-	        "id": fila[0],
+            "id": fila[0],
             "nombre": fila[1],
             "tienda": fila[2],
             "precio": float(fila[3]),
-            "imagen": fila[4]
+            "imagen": fila[4] or "imagenes/logo1.png"
         })
-
-    return productos
+    
+    return {
+        "productos": productos,
+        "total": total,
+        "pagina": pagina,
+        "por_pagina": por_pagina,
+        "total_paginas": -(-total // por_pagina)  # redondeo hacia arriba
+    }
 
 def obtener_historial_precios(producto: str):
 

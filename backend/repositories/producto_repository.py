@@ -5,10 +5,11 @@ def crear_producto(datos):
     cursor = conexion.cursor()
 
     # Crear producto
+    # DESPUÉS
     consulta_producto = """
     INSERT INTO productos
-    (nombre, descripcion, categoria_id, marca_id)
-    VALUES (%s, %s, %s, %s)
+    (nombre, descripcion, categoria_id, marca_id, imagen_url)
+    VALUES (%s, %s, %s, %s, %s)
     RETURNING id
     """
 
@@ -16,7 +17,8 @@ def crear_producto(datos):
         datos.nombre,
         datos.descripcion,
         datos.categoria_id,
-        datos.marca_id
+        datos.marca_id,
+        datos.imagen_url
     )
 
     cursor.execute(consulta_producto, valores_producto)
@@ -110,14 +112,13 @@ def obtener_producto(nombre: str):
     cursor = conexion.cursor()
 
     consulta = """
-    SELECT id, nombre
+    SELECT id, nombre, imagen_url
     FROM productos
     WHERE LOWER(REPLACE(nombre, ' ', '')) = %s
     LIMIT 1
     """
 
     nombre_normalizado = nombre.lower().strip().replace(" ", "")
-
     cursor.execute(consulta, (nombre_normalizado,))
     fila = cursor.fetchone()
 
@@ -130,7 +131,7 @@ def obtener_producto(nombre: str):
     return {
         "id": fila[0],
         "nombre": fila[1],
-        "imagen": "https://via.placeholder.com/200"
+        "imagen": fila[2] or "imagenes/logo1.png"
     }
 
 
