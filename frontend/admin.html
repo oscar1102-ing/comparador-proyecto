@@ -51,6 +51,11 @@
             <div class="admin-form">
                 <input type="text" id="prod-nombre" placeholder="Nombre del producto">
                 <input type="text" id="prod-descripcion" placeholder="Descripción">
+                <input type="text" id="prod-imagen-url" placeholder="URL de imagen (opcional)">
+                <div style="text-align:center; color:#94a3b8; font-size:12px; margin: -6px 0">— o —</div>
+                <input type="file" id="prod-imagen-file" accept="image/*" onchange="previsualizarImagen(this)">
+                <img id="preview-imagen" src="" alt="preview" 
+                     style="display:none; max-height:100px; border-radius:8px; object-fit:cover;">
                 <select id="prod-categoria">
                     <option value="">-- Categoría --</option>
                 </select>
@@ -137,13 +142,26 @@ async function cargarProductosAdmin() {
 }
 
 async function crearProducto() {
+    let imagen_url = document.getElementById("prod-imagen-url").value.trim();
+
+    // Si eligió archivo, convertir a base64
+    const archivo = document.getElementById("prod-imagen-file").files[0];
+    if (archivo) {
+        imagen_url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(archivo);
+        });
+    }
+
     const datos = {
         nombre: document.getElementById("prod-nombre").value,
         descripcion: document.getElementById("prod-descripcion").value,
         categoria_id: parseInt(document.getElementById("prod-categoria").value),
         marca_id: parseInt(document.getElementById("prod-marca").value),
         precio: parseFloat(document.getElementById("prod-precio").value),
-        tienda_id: parseInt(document.getElementById("prod-tienda").value)
+        tienda_id: parseInt(document.getElementById("prod-tienda").value),
+        imagen_url: imagen_url || null
     };
 
     if (!datos.nombre || !datos.categoria_id || !datos.marca_id || !datos.tienda_id) {
@@ -160,8 +178,28 @@ async function crearProducto() {
     if (res.ok) {
         mostrarToast("Producto creado");
         cargarProductosAdmin();
+        // Limpiar formulario
+        document.getElementById("prod-nombre").value = "";
+        document.getElementById("prod-descripcion").value = "";
+        document.getElementById("prod-imagen-url").value = "";
+        document.getElementById("prod-imagen-file").value = "";
+        document.getElementById("preview-imagen").style.display = "none";
     } else {
         mostrarToast(data.detail || "Error", "error");
+    }
+}
+
+function previsualizarImagen(input) {
+    const preview = document.getElementById("preview-imagen");
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+            // Limpiar URL si eligió archivo
+            document.getElementById("prod-imagen-url").value = "";
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
