@@ -259,6 +259,11 @@ function actualizarHeader() {
             <a href="dashboard.html" class="btn-auth">Mi cuenta</a>
             <button class="btn-auth" onclick="cerrarSesion()">Salir</button>
         `;
+    } else {
+        authDiv.innerHTML = `
+            <a href="login.html" class="btn-auth">Ingresar</a>
+            <a href="registrar.html" class="btn-auth">Registro</a>
+        `;
     }
 }
 
