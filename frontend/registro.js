@@ -13,6 +13,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const edad = document.getElementById("edad").value;
             const password = document.getElementById("password").value;
             const confirmPassword = document.getElementById("confirmPassword").value;
+            
+            // Validar nombre: solo letras y espacios
+            const regexNombre = /^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s]+$/;
+            if (!regexNombre.test(nombre)) {
+                mostrarMensaje("❌ El nombre solo puede contener letras", "error");
+                return;
+            }
+
+            // Validar edad: no negativa y mayor de 0
+            if (Number(edad) <= 0 || Number(edad) > 120) {
+                mostrarMensaje("❌ Ingresa una edad válida", "error");
+                return;
+            }
 
             if (!nombre || !email || !edad || !password) {
                 mostrarMensaje("❌ Completa todos los campos", "error");
