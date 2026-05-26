@@ -20,6 +20,12 @@
                    maxlength="6" required style="text-align:center; 
                    font-size: 24px; letter-spacing: 8px;">
             <button type="submit">Verificar</button>
+            <div style="text-align:center; margin-top:15px;">
+                <button id="btnReenviar" disabled 
+                        style="background:none; border:none; color:#888; cursor:not-allowed; font-size:14px;">
+                    Reenviar código (<span id="contador">60</span>s)
+                </button>
+            </div>
         </form>
         <div id="mensajeMFA"></div>
     </div>

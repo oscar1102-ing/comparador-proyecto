@@ -13,6 +13,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const form = document.getElementById("mfaForm");
     const mensajeDiv = document.getElementById("mensajeMFA");
+    // Contador reenviar código
+    const btnReenviar = document.getElementById("btnReenviar");
+    const contadorSpan = document.getElementById("contador");
+    let segundosRestantes = 60;
+
+    const intervaloContador = setInterval(() => {
+        segundosRestantes--;
+        contadorSpan.textContent = segundosRestantes;
+        if (segundosRestantes <= 0) {
+            clearInterval(intervaloContador);
+            btnReenviar.disabled = false;
+            btnReenviar.style.color = "#ff7a00";
+            btnReenviar.style.cursor = "pointer";
+            btnReenviar.textContent = "Reenviar código";
+        }
+    }, 1000);
+
+    btnReenviar.addEventListener("click", async () => {
+        btnReenviar.disabled = true;
+        btnReenviar.style.color = "#888";
+        btnReenviar.style.cursor = "not-allowed";
+        segundosRestantes = 60;
+        contadorSpan.textContent = segundosRestantes;
+
+        try {
+            const res = await fetch("/api/reenviar-codigo", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario_id: parseInt(usuarioId) })
+            });
+            mostrarMensaje("✅ Código reenviado, revisa tu correo", "success");
+        } catch (err) {
+            mostrarMensaje("❌ Error al reenviar", "error");
+        }
+
+        const nuevoIntervalo = setInterval(()  method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario_id: parseInt(usuarioId) })
+            });=> {
+            segundosRestantes--;
+            contadorSpan.textContent = segundosRestantes;
+            if (segundosRestantes <= 0) {
+                clearInterval(nuevoIntervalo);
+                btnReenviar.disabled = false;
+                btnReenviar.style.color = "#ff7a00";
+                btnReenviar.style.cursor = "pointer";
+                btnReenviar.textContent = "Reenviar código";
+            }
+        }, 1000);
+    });
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();

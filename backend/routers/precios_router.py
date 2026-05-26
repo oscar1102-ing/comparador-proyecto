@@ -151,3 +151,13 @@ def listar_usuarios():
     cursor.close()
     conexion.close()
     return [{"id": f[0], "nombre": f[1], "email": f[2], "rol": f[3], "fecha_registro": str(f[4])} for f in filas]
+    
+@router.post("/reenviar-codigo")
+def reenviar_codigo(datos: dict):
+    usuario_id = datos.get("usuario_id")
+    if not usuario_id:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+    resultado = usuario_service.reenviar_codigo(usuario_id)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
