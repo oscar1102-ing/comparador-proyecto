@@ -54,29 +54,24 @@ def obtener_todas_tiendas():
 def obtener_tiendas_producto(nombre: str):
     conexion = conectar_base()
     cursor = conexion.cursor()
-
     consulta = """
-    SELECT t.nombre, pr.precio
+    SELECT t.nombre, pr.precio, pr.url_producto
     FROM precios pr
     JOIN productos p ON pr.producto_id = p.id
     JOIN tiendas t ON pr.tienda_id = t.id
     WHERE LOWER(REPLACE(p.nombre, ' ', '')) = %s
     ORDER BY pr.precio ASC
     """
-
     nombre_normalizado = nombre.lower().strip().replace(" ", "")
-
     cursor.execute(consulta, (nombre_normalizado,))
     resultado = cursor.fetchall()
-
     cursor.close()
     conexion.close()
-
     tiendas = []
     for fila in resultado:
         tiendas.append({
             "tienda": fila[0],
-            "precio": float(fila[1])
+            "precio": float(fila[1]),
+            "url": fila[2] or ""
         })
-
     return tiendas

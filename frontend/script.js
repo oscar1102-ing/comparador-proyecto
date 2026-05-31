@@ -244,7 +244,17 @@ async function cargarDetalle() {
     const tiendasDiv = document.getElementById("tiendas");
     tiendasDiv.innerHTML = "";
     data.tiendas.forEach(t => {
-        tiendasDiv.innerHTML += `<p>${t.tienda} - ${formatearPrecio(t.precio)}</p>`;
+        tiendasDiv.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; 
+                        padding:10px; border-bottom:1px solid #eee;">
+                <span>${t.tienda}</span>
+                <span class="precio">${formatearPrecio(t.precio)}</span>
+                ${t.url ? `<a href="${t.url}" target="_blank" 
+                    style="background:#ff7a00; color:white; padding:8px 14px; 
+                    border-radius:5px; text-decoration:none; font-size:14px;">
+                    Comprar →</a>` : ''}
+            </div>
+        `;
     });
 
     const similaresDiv = document.getElementById("similares");
