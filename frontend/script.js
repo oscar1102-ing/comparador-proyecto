@@ -68,12 +68,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// ── UTILIDADES ──
+function formatearPrecio(precio) {
+    return precio.toLocaleString('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    });
+}
+
+
 // ── PAGINACIÓN ──
 let paginaActual = 1;
 let totalPaginas = 1;
 let busquedaActual = "";
 
 async function cargarProductos(pagina = 1) {
+
     const params = new URLSearchParams(window.location.search);
     busquedaActual = params.get("q") || "";
     const categoriaActual = params.get("categoria") || "";
@@ -138,7 +149,7 @@ async function cargarProductos(pagina = 1) {
                          alt="producto" style="width:100px; height:100px; object-fit:contain;">
                     <div class="info-producto-busqueda">
                         <h3>${prod.nombre}</h3>
-                        <p class="precio">$${prod.precio}</p>
+                        <p class="precio">${formatearPrecio(prod.precio)}</p>
                         <p>${prod.tienda}</p>
                         <a href="producto.html?nombre=${prod.nombre}">Ver producto</a>
                         ${botonFavorito}
@@ -198,7 +209,7 @@ async function cargarTop() {
                 <img src="${(p.imagen && p.imagen !== 'null') ? p.imagen : 'imagenes/logo1.png'}"
                      style="width:100px; height:100px; object-fit:contain;">
                 <h3>${p.nombre}</h3>
-                <p>$${p.precio}</p>
+                <p>${formatearPrecio(p.precio)}</p>
                 <a href="producto.html?nombre=${p.nombre}">Ver</a>
             </div>
         `;
@@ -233,7 +244,7 @@ async function cargarDetalle() {
     const tiendasDiv = document.getElementById("tiendas");
     tiendasDiv.innerHTML = "";
     data.tiendas.forEach(t => {
-        tiendasDiv.innerHTML += `<p>${t.tienda} - $${t.precio}</p>`;
+        tiendasDiv.innerHTML += `<p>${t.tienda} - ${formatearPrecio(t.precio)}</p>`;
     });
 
     const similaresDiv = document.getElementById("similares");
@@ -242,7 +253,7 @@ async function cargarDetalle() {
         similaresDiv.innerHTML += `
             <div>
                 <h4>${s.nombre}</h4>
-                <p>$${s.precio}</p>
+                <p>${formatearPrecio(s.precio)}</p>
                 <a href="producto.html?nombre=${s.nombre}">Ver</a>
             </div>
         `;
@@ -345,3 +356,6 @@ function mostrarToast(mensaje, tipo = "success") {
         setTimeout(() => toast.remove(), 300);
     }, 2500);
 }
+
+
+
