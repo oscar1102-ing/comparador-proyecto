@@ -56,33 +56,42 @@ def obtener_productos_top():
     return productos
 
 
-def obtener_precios_producto(producto: str, pagina: int = 1, por_pagina: int = 10):
+def obtener_precios_producto(producto: str, categoria: str = "", pagina: int = 1, por_pagina: int = 10):
     conexion = conectar_base()
     cursor = conexion.cursor()
     producto_normalizado = producto.lower().strip().replace(" ", "")
-    
-    # Contar total de resultados
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM precios pr
-        JOIN productos p ON pr.producto_id = p.id
-        JOIN tiendas t ON pr.tienda_id = t.id
-        WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
-    """, (f"%{producto_normalizado}%",))
+    categoria_normalizada = categoria.lower().strip()
+
+    if categoria_normalizada:
+        where = """
+            FROM precios pr
+            JOIN productos p ON pr.producto_id = p.id
+            JOIN tiendas t ON pr.tienda_id = t.id
+            JOIN categorias c ON p.categoria_id = c.id
+            WHERE LOWER(c.nombre) LIKE %s
+        """
+        params_count = (f"%{categoria_normalizada}%",)
+        params_query = (f"%{categoria_normalizada}%", por_pagina, (pagina - 1) * por_pagina)
+    else:
+        where = """
+            FROM precios pr
+            JOIN productos p ON pr.producto_id = p.id
+            JOIN tiendas t ON pr.tienda_id = t.id
+            WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
+        """
+        params_count = (f"%{producto_normalizado}%",)
+        params_query = (f"%{producto_normalizado}%", por_pagina, (pagina - 1) * por_pagina)
+
+    cursor.execute(f"SELECT COUNT(*) {where}", params_count)
     total = cursor.fetchone()[0]
 
-    # Traer solo los de esta página
-    offset = (pagina - 1) * por_pagina
-    consulta = """
-    SELECT p.id, p.nombre, t.nombre, pr.precio, p.imagen_url
-    FROM precios pr
-    JOIN productos p ON pr.producto_id = p.id
-    JOIN tiendas t ON pr.tienda_id = t.id
-    WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
-    ORDER BY pr.precio ASC
-    LIMIT %s OFFSET %s
-    """
-    cursor.execute(consulta, (f"%{producto_normalizado}%", por_pagina, offset))
+    cursor.execute(f"""
+        SELECT p.id, p.nombre, t.nombre, pr.precio, p.imagen_url
+        {where}
+        ORDER BY pr.precio ASC
+        LIMIT %s OFFSET %s
+    """, params_query)
+
     resultado = cursor.fetchall()
     cursor.close()
     conexion.close()
@@ -96,13 +105,13 @@ def obtener_precios_producto(producto: str, pagina: int = 1, por_pagina: int = 1
             "precio": float(fila[3]),
             "imagen": fila[4] or "imagenes/logo1.png"
         })
-    
+
     return {
         "productos": productos,
         "total": total,
         "pagina": pagina,
         "por_pagina": por_pagina,
-        "total_paginas": -(-total // por_pagina)  # redondeo hacia arriba
+        "total_paginas": -(-total // por_pagina)
     }
 
 def obtener_historial_precios(producto: str):

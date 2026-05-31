@@ -76,6 +76,7 @@ let busquedaActual = "";
 async function cargarProductos(pagina = 1) {
     const params = new URLSearchParams(window.location.search);
     busquedaActual = params.get("q") || "";
+    const categoriaActual = params.get("categoria") || "";
 
     const contenedor = document.getElementById("lista-productos");
     if (!contenedor) return;
@@ -85,7 +86,9 @@ async function cargarProductos(pagina = 1) {
     // Actualizar texto búsqueda
     const textoBusqueda = document.getElementById("texto-busqueda");
     if (textoBusqueda) {
-        textoBusqueda.textContent = busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
+        textoBusqueda.textContent = categoriaActual 
+            ? categoriaActual.charAt(0).toUpperCase() + categoriaActual.slice(1)
+            : busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
     }
 
     const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -98,7 +101,7 @@ async function cargarProductos(pagina = 1) {
     }
 
     try {
-        const response = await fetch(`/api/productos?q=${busquedaActual}&pagina=${pagina}&por_pagina=10`);
+        const response = await fetch(`/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&pagina=${pagina}&por_pagina=10`);
         const data = await response.json();
 
         paginaActual = data.pagina;

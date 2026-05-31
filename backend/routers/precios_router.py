@@ -16,8 +16,9 @@ router = APIRouter()
 
 # ── PRODUCTOS ──
 @router.get("/productos")
-def obtener_productos(q: str = "", pagina: int = 1, por_pagina: int = 10):
-    return precio_service.comparar_precios_producto(q, pagina, por_pagina)
+def obtener_productos(q: str = "", categoria: str = "", pagina: int = 1, por_pagina: int = 10):
+    return precio_service.comparar_precios_producto(q, categoria, pagina, por_pagina)
+
 
 @router.get("/productos/top")
 def top_productos():
