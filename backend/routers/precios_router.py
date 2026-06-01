@@ -181,4 +181,3 @@ def cambiar_rol_usuario(id: int, datos: dict):
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
-

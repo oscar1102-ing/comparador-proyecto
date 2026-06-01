@@ -120,29 +120,38 @@ def eliminar_usuario(id: int):
 # ============================================
 def cambiar_rol(id: int, nuevo_rol: str):
     roles_validos = ['usuario', 'premium', 'admin', 'root']
+    
     if nuevo_rol not in roles_validos:
         return {"error": f"Rol inválido. Opciones: {', '.join(roles_validos)}"}
- 
+
     conexion = conectar_base()
     cursor = conexion.cursor()
- 
+
     cursor.execute("SELECT es_root, rol FROM usuarios WHERE id = %s", (id,))
     usuario = cursor.fetchone()
- 
+
     if not usuario:
         cursor.close()
         conexion.close()
         return {"error": "Usuario no encontrado"}
- 
+
     if usuario[0] is True or usuario[1] == 'root':
         cursor.close()
         conexion.close()
         return {"error": "No se puede modificar el rol del superusuario root"}
- 
-    cursor.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (nuevo_rol, id))
+
+    if nuevo_rol == 'root':
+        cursor.execute(
+            "UPDATE usuarios SET rol = %s, es_root = TRUE WHERE id = %s",
+            (nuevo_rol, id)
+        )
+    else:
+        cursor.execute(
+            "UPDATE usuarios SET rol = %s, es_root = FALSE WHERE id = %s",
+            (nuevo_rol, id)
+        )
+
     conexion.commit()
     cursor.close()
     conexion.close()
     return {"mensaje": f"Rol actualizado a {nuevo_rol}"}
- 
-

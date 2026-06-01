@@ -249,6 +249,9 @@ async function cargarUsuariosAdmin() {
     const res = await fetch(`${API}/admin/usuarios`);
     const data = await res.json();
     const contenedor = document.getElementById("lista-usuarios-admin");
+    const usuarioActual = JSON.parse(localStorage.getItem("usuario") || "null");
+    const esRootActual = usuarioActual?.rol === "root";
+    const totalRoots = data.filter(u => u.es_root || u.rol === 'root').length;
 
     contenedor.innerHTML = `
         <table class="admin-table">
@@ -265,22 +268,24 @@ async function cargarUsuariosAdmin() {
             <tbody>
                 ${data.map(u => {
                     const esRoot = u.es_root || u.rol === "root";
+                    const esMismoUsuario = u.id === usuarioActual?.id;
 
-                    // Solo el root puede cambiar roles y eliminar usuarios
-                    const usuarioActual = JSON.parse(localStorage.getItem("usuario") || "null");
-                    const esRootActual = usuarioActual?.rol === "root";
+                    const selectorRol = (esRoot && totalRoots <= 1) || esMismoUsuario
+                        ? badgeRol(u.rol)
+                        : `
+                            <select class="select-rol" onchange="cambiarRol(${u.id}, this.value)" 
+                                    ${!esRootActual ? 'disabled title="Solo el root puede cambiar roles"' : ''}>
+                                <option value="usuario"  ${u.rol === "usuario"  ? "selected" : ""}>👤 usuario</option>
+                                <option value="premium"  ${u.rol === "premium"  ? "selected" : ""}>⭐ premium</option>
+                                <option value="admin"    ${u.rol === "admin"    ? "selected" : ""}>⚙️ admin</option>
+                                <option value="root"     ${u.rol === "root"     ? "selected" : ""}>👑 root</option>
+                            </select>
+                        `;
 
-                    const selectorRol = esRoot ? badgeRol(u.rol) : `
-                        <select class="select-rol" onchange="cambiarRol(${u.id}, this.value)" 
-                                ${!esRootActual ? 'disabled title="Solo el root puede cambiar roles"' : ''}>
-                            <option value="usuario"  ${u.rol === "usuario"  ? "selected" : ""}>👤 usuario</option>
-                            <option value="premium"  ${u.rol === "premium"  ? "selected" : ""}>⭐ premium</option>
-                            <option value="admin"    ${u.rol === "admin"    ? "selected" : ""}>⚙️ admin</option>
-                        </select>
-                    `;
-
-                    const btnEliminar = esRoot
-                        ? `<button class="btn-eliminar" disabled title="El root no se puede eliminar">🔒 Root</button>`
+                    const btnEliminar = esMismoUsuario
+                        ? `<button class="btn-eliminar" disabled title="No puedes eliminarte a ti mismo">🔒 Tú</button>`
+                        : (esRoot && totalRoots <= 1)
+                        ? `<button class="btn-eliminar" disabled title="No se puede eliminar el único root">🔒 Root</button>`
                         : `<button class="btn-eliminar" onclick="eliminarUsuario(${u.id}, '${u.nombre}')"
                                    ${!esRootActual ? 'disabled title="Solo el root puede eliminar usuarios"' : ''}>
                                🗑 Eliminar

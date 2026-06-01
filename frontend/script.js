@@ -366,6 +366,3 @@ function mostrarToast(mensaje, tipo = "success") {
         setTimeout(() => toast.remove(), 300);
     }, 2500);
 }
-
-
-
