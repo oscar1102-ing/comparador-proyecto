@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarTop();
     cargarDetalle();
     actualizarHeader();
+    
+    
 
     // Carrusel
     document.querySelectorAll(".comparacion").forEach(carrusel => {
@@ -77,6 +79,22 @@ function formatearPrecio(precio) {
     });
 }
 
+function obtenerUsuarioActual() {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return {
+            id: payload.sub,
+            nombre: payload.nombre,
+            email: payload.email,
+            rol: payload.rol
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
 
 // ── PAGINACIÓN ──
 let paginaActual = 1;
@@ -102,7 +120,7 @@ async function cargarProductos(pagina = 1) {
             : busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
     }
 
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+    const usuario = obtenerUsuarioActual();
     if (usuario && busquedaActual.trim() && pagina === 1) {
         fetch("/api/historial/guardar", {
             method: "POST",
@@ -134,7 +152,7 @@ async function cargarProductos(pagina = 1) {
         }
 
         data.productos.forEach(prod => {
-            const estaLogueado = localStorage.getItem("usuario");
+            const estaLogueado = obtenerUsuarioActual();
             const botonFavorito = estaLogueado ? `
                 <button id="fav-${prod.id}"
                     onclick="agregarFavorito(${prod.id}, '${prod.nombre}', 'fav-${prod.id}')"
@@ -303,8 +321,11 @@ async function agregarFavorito(productoId, nombreProducto, botonId) {
     if (!boton || boton.disabled) return;
     boton.disabled = true;
 
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-    if (!usuario) { window.location.href = "/login.html"; return; }
+    const usuario = obtenerUsuarioActual();  // Tu función que obtiene el usuario desde el token
+    if (!usuario) {
+        window.location.href = "/login.html";
+        return;
+    }
 
     try {
         const res = await fetch("/api/favoritos/toggle", {
@@ -314,16 +335,27 @@ async function agregarFavorito(productoId, nombreProducto, botonId) {
         });
         const data = await res.json();
 
+        // Aplicar estilos según la acción
         if (data.accion === "agregado") {
             boton.textContent = "⭐ Guardado";
-            boton.style.background = "#22c55e";
+            boton.style.background = "#22c55e";   // verde
         } else {
             boton.textContent = "⭐ Favorito";
-            boton.style.background = "#ff6b00";
+            boton.style.background = "#ff6b00";   // naranja
         }
+        // Forzar color de texto blanco y otros estilos básicos
+        boton.style.color = "white";
+        boton.style.border = "none";
+        boton.style.padding = "6px 12px";
+        boton.style.borderRadius = "4px";
+        boton.style.cursor = "pointer";
+        boton.style.fontSize = "14px";
+
+        // Animación de escala
         boton.style.transform = "scale(1.4)";
         boton.style.transition = "transform 0.2s ease";
         setTimeout(() => { boton.style.transform = "scale(1)"; }, 200);
+
         mostrarToast(data.accion === "agregado" ? "Agregado a favoritos" : "Eliminado de favoritos", data.accion === "agregado" ? "success" : "info");
         boton.disabled = false;
 
@@ -366,3 +398,5 @@ function mostrarToast(mensaje, tipo = "success") {
         setTimeout(() => toast.remove(), 300);
     }, 2500);
 }
+
+

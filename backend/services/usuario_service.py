@@ -155,3 +155,4 @@ def verificar_token(token: str):
         return payload
     except Exception:
         return None
+

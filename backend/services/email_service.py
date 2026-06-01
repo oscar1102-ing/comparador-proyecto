@@ -124,3 +124,4 @@ def enviar_codigo(email_destino: str, codigo: str, nombre: str):
     except Exception as e:
         print(f"Error enviando correo: {e}")
         return False
+

@@ -1,120 +1,301 @@
 <!DOCTYPE html>
-
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del producto</title>
+    <link rel="icon" href="imagenes/logo1.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .producto-page { max-width: 960px; margin: 0 auto; padding: 28px 20px; }
+        .breadcrumb { font-size: 13px; color: #888; margin-bottom: 20px; }
+        .breadcrumb a { color: #888; text-decoration: none; }
+        .breadcrumb span { color: #ff6b00; font-weight: 500; }
 
-    <head>
+        .hero-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .img-box { background: #f9f9f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; min-height: 260px; position: relative; overflow: hidden; }
+        .img-box img { width: 200px; height: 200px; object-fit: contain; }
+        .badge-mejor-precio { position: absolute; top: 12px; left: 12px; background: #22c55e; color: white; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
 
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        .info-producto-detalle h1 { font-size: 20px; font-weight: 600; line-height: 1.4; margin-bottom: 10px; color: #1a1a1a; font-family: 'Outfit', sans-serif; }
+        .categoria-badge-detalle { display: inline-block; background: #fff3ea; color: #cc4e00; font-size: 12px; padding: 3px 12px; border-radius: 20px; margin-bottom: 16px; font-weight: 500; }
+        .precio-principal { font-size: 34px; font-weight: 700; color: #ff6b00; font-family: 'Outfit', sans-serif; margin-bottom: 4px; }
+        .precio-subtexto { font-size: 13px; color: #888; margin-bottom: 14px; }
+        .ahorro-pill-detalle { display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #166534; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 20px; margin-bottom: 20px; }
+        .btns-detalle { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-comprar-detalle { background: #ff6b00; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-comprar-detalle:hover { background: #e96d00; }
+        .btn-fav-detalle { background: white; color: #ff6b00; border: 1.5px solid #ff6b00; padding: 12px 16px; border-radius: 10px; font-size: 14px; cursor: pointer; }
+        .btn-fav-detalle:hover { background: #fff3ea; }
 
-        <title>Detalle del producto</title>
+        .seccion-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .seccion-titulo { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 18px; font-family: 'Outfit', sans-serif; }
 
-        <link rel="icon" href="imagenes/logo1.png">
-        <link rel="stylesheet" href="styles.css">
+        .tienda-fila { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 0.5px solid #f0f0f0; }
+        .tienda-fila:last-child { border-bottom: none; }
+        .tienda-logo-box { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+        .logo-ml { background: #fff3cd; color: #7a5200; }
+        .logo-ex { background: #e8f4e8; color: #1a6b1a; }
+        .logo-az { background: #fff3ea; color: #8b3a00; }
+        .logo-default { background: #f0f0f0; color: #555; }
+        .tienda-datos { flex: 1; min-width: 0; }
+        .tienda-nombre-fila { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tag-barato { background: #dcfce7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+        .tienda-entrega { font-size: 12px; color: #888; margin-top: 2px; }
+        .barra-comparacion { height: 4px; border-radius: 2px; margin-top: 7px; transition: width 0.5s ease; }
+        .tienda-precio-fila { font-size: 18px; font-weight: 700; color: #1a1a1a; flex-shrink: 0; }
+        .tienda-precio-fila.precio-verde { color: #16a34a; }
+        .btn-ir-tienda { background: #f5f5f5; border: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; color: #444; flex-shrink: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .btn-ir-tienda:hover { background: #ebebeb; }
 
-    </head>
+        .mapa-contenedor { background: #f0f4ff; border-radius: 12px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #4a6fa5; border: 1.5px dashed #b5d4f4; margin-bottom: 16px; }
+        .mapa-contenedor p { font-size: 14px; font-weight: 500; }
+        .mapa-contenedor span { font-size: 12px; opacity: 0.7; }
+        .pines-mapa { display: flex; gap: 10px; flex-wrap: wrap; }
+        .pin-item { display: flex; align-items: center; gap: 6px; background: #f5f5f5; padding: 8px 12px; border-radius: 10px; font-size: 13px; cursor: pointer; border: 0.5px solid #e8e8e8; }
+        .pin-item:hover { background: #ebebeb; }
+        .punto-pin { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-    <body>
+        .similares-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .similar-card-item { background: #f9f9f9; border-radius: 12px; padding: 14px; border: 0.5px solid #e8e8e8; cursor: pointer; text-align: center; transition: transform 0.2s; text-decoration: none; display: block; }
+        .similar-card-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .similar-card-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 8px; }
+        .similar-nombre-item { font-size: 12px; color: #444; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .similar-precio-item { font-size: 14px; font-weight: 700; color: #ff6b00; }
 
-        <header>
+        @media (max-width: 600px) {
+            .hero-grid { grid-template-columns: 1fr; }
+            .similares-grid { grid-template-columns: repeat(2, 1fr); }
+            .tienda-fila { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+        </div>
+        <form class="buscador" action="busquedaProducto.html" method="GET">
+            <input type="search" name="q" placeholder="Buscar productos..." required>
+            <button type="submit">Buscar</button>
+        </form>
+        <div class="auth-buttons"></div>
+    </header>
 
-            <div class="logo">
-                <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    <nav>
+        <ul>
+            <li><a href="busquedaProducto.html?categoria=celulares">Celulares</a></li>
+            <li><a href="busquedaProducto.html?categoria=laptops">Laptops</a></li>
+            <li><a href="busquedaProducto.html?categoria=consolas">Consolas</a></li>
+            <li><a href="busquedaProducto.html?categoria=monitores">Monitores</a></li>
+            <li><a href="busquedaProducto.html?categoria=televisores">Televisores</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="producto-page">
+            <div class="breadcrumb">
+                <a href="index.html">Inicio</a> › 
+                <a href="busquedaProducto.html">Productos</a> › 
+                <span id="breadcrumb-nombre">Cargando...</span>
             </div>
 
-            <form class="buscador" action="busquedaProducto.html" method="GET">
-
-                <input type="search" name="q" placeholder="Buscar productos..." required>
-
-                <button type="submit">Buscar</button>
-
-            </form>
-            
-            <div class="auth-buttons"></div>
-
-        </header>
-
-        <nav>
-            <ul>
-                <li><a href="busquedaProducto.html?categoria=celulares">Celulares</a></li>
-                <li><a href="busquedaProducto.html?categoria=laptops">Laptops</a></li>
-                <li><a href="busquedaProducto.html?categoria=consolas">Consolas</a></li>
-                <li><a href="busquedaProducto.html?categoria=monitores">Monitores</a></li>
-                <li><a href="busquedaProducto.html?categoria=televisores">Televisores</a></li>
-            </ul>
-        </nav>
-
-        <main>
-
-            <section class="producto-principal">
-
-                <div class="imagenes-producto">
-
-                    <img id="imagen">
-
+            <!-- HERO -->
+            <div class="hero-grid">
+                <div class="img-box">
+                    <div class="badge-mejor-precio" id="badge-mejor" style="display:none;">✓ Mejor precio</div>
+                    <img id="imagen" src="imagenes/logo1.png" alt="producto">
                 </div>
-
-                <div class="info-producto">
-
-                    <h2 id="nombre"></h2>
-
-                </div>
-
-            </section>
-
-            <section class="otras-tiendas">
-                <div class="oferta">
-                    <h2>Otras tiendas con este producto</h2>
-                </div>
-                <article class="producto">
-
-                    <div class="carrusel">
-
-                        <div class="comparacion">
-
-                            <div id="tiendas"></div>
-
-                        </div>
-
+                <div class="info-producto-detalle">
+                    <div class="categoria-badge-detalle" id="categoria-badge">Producto</div>
+                    <h1 id="nombre">Cargando...</h1>
+                    <div class="precio-principal" id="precio-principal">$0</div>
+                    <div class="precio-subtexto">Precio más bajo encontrado</div>
+                    <div class="ahorro-pill-detalle" id="ahorro-pill" style="display:none;">
+                        💰 <span id="ahorro-texto"></span>
                     </div>
-
-                </article>
-
-            </section>
-
-            <section class="productos-similares">
-
-                <div class="oferta">
-                    <h2>Productos similares</h2>
-                </div>
-
-                <article class="producto">
-
-                    <div class="carrusel">
-
-                        <div class="comparacion">
-
-                           <div id="similares"></div>
-
-                        </div>
-
+                    <div class="btns-detalle" id="btns-container">
+                        <a id="btn-comprar-link" href="#" target="_blank" class="btn-comprar-detalle">🛒 Comprar ahora</a>
                     </div>
+                </div>
+            </div>
 
-                </article>
+            <!-- COMPARACION TIENDAS -->
+            <div class="seccion-card">
+                <div class="seccion-titulo">📊 Comparación de precios por tienda</div>
+                <div id="tiendas">
+                    <p style="color:#888; font-size:14px;">Cargando precios...</p>
+                </div>
+            </div>
 
-            </section>
+            <!-- MAPA -->
+            <div class="seccion-card">
+                <div class="seccion-titulo">📍 ¿Dónde comprar en Bogotá?</div>
+                <div id="mapa-tiendas">
+                    <div class="mapa-contenedor">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                        <p>Mapa de tiendas en Bogotá</p>
+                        <span>Próximamente disponible</span>
+                    </div>
+                    <div class="pines-mapa" id="pines-container"></div>
+                </div>
+            </div>
 
-        </main>
+            <!-- SIMILARES -->
+            <div class="seccion-card">
+                <div class="seccion-titulo">🔍 Productos similares</div>
+                <div class="similares-grid" id="similares">
+                    <p style="color:#888; font-size:14px;">Cargando similares...</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
-        <footer>
+    <footer>
+        <p>© 2026 PriceCompare</p>
+        <p>Comparador de precios de tiendas online</p>
+    </footer>
 
-            <p>© 2026 PriceCompare</p>
-            <p>Comparador de precios de tiendas online</p>
+    <script src="script.js"></script>
+    <script>
+        function getLogoClass(tienda) {
+            const t = tienda.toLowerCase();
+            if (t.includes('mercado')) return 'logo-ml';
+            if (t.includes('exito') || t.includes('éxito')) return 'logo-ex';
+            if (t.includes('amazon')) return 'logo-az';
+            return 'logo-default';
+        }
 
-        </footer>
+        function getLogoLetras(tienda) {
+            const t = tienda.toLowerCase();
+            if (t.includes('mercado')) return 'ML';
+            if (t.includes('exito') || t.includes('éxito')) return 'ÉX';
+            if (t.includes('amazon')) return 'AZ';
+            return tienda.substring(0, 2).toUpperCase();
+        }
 
-        <script src="script.js"></script>
+        function getColorBarra(index, total) {
+            if (index === 0) return '#16a34a';
+            if (index === total - 1) return '#ef4444';
+            return '#f59e0b';
+        }
 
-    </body>
+        function getPinColor(tienda) {
+            const t = tienda.toLowerCase();
+            if (t.includes('mercado')) return '#16a34a';
+            if (t.includes('exito') || t.includes('éxito')) return '#f59e0b';
+            if (t.includes('amazon')) return '#3b82f6';
+            return '#888';
+        }
 
+        async function cargarDetalleProducto() {
+            const params = new URLSearchParams(window.location.search);
+            const nombre = params.get("nombre");
+            if (!nombre) return;
+
+            try {
+                const res = await fetch(`/api/producto?nombre=${encodeURIComponent(nombre)}`);
+                const data = await res.json();
+
+                if (!data.producto) return;
+
+                document.title = data.producto.nombre + " - PriceCompare";
+                document.getElementById("breadcrumb-nombre").textContent = data.producto.nombre;
+                document.getElementById("nombre").textContent = data.producto.nombre;
+                document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
+
+                const tiendas = data.tiendas || [];
+
+                if (tiendas.length > 0) {
+                    const precioMin = tiendas[0].precio;
+                    const precioMax = tiendas[tiendas.length - 1].precio;
+                    const ahorro = precioMax - precioMin;
+
+                    document.getElementById("precio-principal").textContent = formatearPrecio(precioMin);
+                    document.getElementById("badge-mejor").style.display = "block";
+
+                    if (ahorro > 0 && tiendas.length > 1) {
+                        document.getElementById("ahorro-pill").style.display = "inline-flex";
+                        document.getElementById("ahorro-texto").textContent = 
+                            `Ahorras ${formatearPrecio(ahorro)} vs precio más alto`;
+                    }
+
+                    if (tiendas[0].url) {
+                        document.getElementById("btn-comprar-link").href = tiendas[0].url;
+                    }
+
+                    const tiendasDiv = document.getElementById("tiendas");
+                    const pinesContainer = document.getElementById("pines-container");
+                    tiendasDiv.innerHTML = "";
+                    pinesContainer.innerHTML = "";
+
+                    tiendas.forEach((t, i) => {
+                        const esMasBarato = i === 0;
+                        const porcentajeBarra = ((t.precio - precioMin) / (precioMax - precioMin || 1)) * 45 + 55;
+                        const colorBarra = getColorBarra(i, tiendas.length);
+
+                        tiendasDiv.innerHTML += `
+                            <div class="tienda-fila">
+                                <div class="tienda-logo-box ${getLogoClass(t.tienda)}">${getLogoLetras(t.tienda)}</div>
+                                <div class="tienda-datos">
+                                    <div class="tienda-nombre-fila">
+                                        ${t.tienda}
+                                        ${esMasBarato ? '<span class="tag-barato">✓ Más barato</span>' : ''}
+                                    </div>
+                                    <div class="tienda-entrega">Disponible online</div>
+                                    <div class="barra-comparacion" style="width:${porcentajeBarra}%;background:${colorBarra}"></div>
+                                </div>
+                                <div class="tienda-precio-fila ${esMasBarato ? 'precio-verde' : ''}">${formatearPrecio(t.precio)}</div>
+                                ${t.url ? `<a href="${t.url}" target="_blank" class="btn-ir-tienda">Ver →</a>` : ''}
+                            </div>
+                        `;
+
+                        pinesContainer.innerHTML += `
+                            <div class="pin-item">
+                                <div class="punto-pin" style="background:${getPinColor(t.tienda)}"></div>
+                                ${t.tienda} ${esMasBarato ? '— Mejor precio' : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+                if (usuario && data.producto.id) {
+                    const btns = document.getElementById("btns-container");
+                    btns.innerHTML += `
+                        <button class="btn-fav-detalle" id="fav-detalle"
+                            onclick="agregarFavorito(${data.producto.id}, '${data.producto.nombre}', 'fav-detalle')">
+                            ♥ Favorito
+                        </button>
+                    `;
+                }
+
+                const similaresDiv = document.getElementById("similares");
+                similaresDiv.innerHTML = "";
+                if (data.similares && data.similares.length > 0) {
+                    data.similares.forEach(s => {
+                        similaresDiv.innerHTML += `
+                            <a href="producto.html?nombre=${encodeURIComponent(s.nombre)}" class="similar-card-item">
+                                <img src="${s.imagen || 'imagenes/logo1.png'}" alt="${s.nombre}">
+                                <div class="similar-nombre-item">${s.nombre}</div>
+                                <div class="similar-precio-item">${formatearPrecio(s.precio)}</div>
+                            </a>
+                        `;
+                    });
+                } else {
+                    similaresDiv.innerHTML = "<p style='color:#888;font-size:14px;'>No hay productos similares.</p>";
+                }
+
+            } catch (err) {
+                console.error("Error cargando detalle:", err);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            actualizarHeader();
+            cargarDetalleProducto();
+        });
+    </script>
+</body>
 </html>

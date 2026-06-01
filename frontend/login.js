@@ -44,3 +44,5 @@ document.addEventListener("DOMContentLoaded", () => {
         mensajeDiv.style.color = tipo === "error" ? "#721c24" : "#155724";
     }
 });
+ 
+
