@@ -276,7 +276,7 @@ function actualizarHeader() {
     const authDiv = document.querySelector(".auth-buttons");
     if (!authDiv) return;
     if (usuario) {
-        const esAdmin = usuario.rol === "admin";
+        const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
             <span class="btn-auth">Hola, ${usuario.nombre}</span>
             ${esAdmin ? '<a href="admin.html" class="btn-auth" style="background:#1e293b;">⚙️ Admin</a>' : ''}
