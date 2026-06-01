@@ -53,38 +53,31 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const response = await fetch(API_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(datosRegistro)
                 });
 
-                console.log("📡 Status:", response.status);
                 const data = await response.json();
-                console.log("📥 Respuesta:", data);
 
                 if (!response.ok) {
-                    mostrarMensaje("❌ " + (data.detail || "Error en el servidor"), "error");
+                    mostrarMensaje("❌ " + (data.detail || data.error || "Error en el servidor"), "error");
                     return;
                 }
 
-                mostrarMensaje("✅ ¡Registro exitoso! Redirigiendo...", "success");
+                // Obtener el ID del usuario desde la respuesta
+                const usuarioId = data.usuario_id;
+                if (!usuarioId) {
+                    mostrarMensaje("❌ Error: no se recibió el ID de usuario", "error");
+                    return;
+                }
+
+                mostrarMensaje("✅ " + (data.mensaje || "Registro exitoso. Revisa tu correo para el QR."), "success");
                 form.reset();
-                
-                let segundos = 3;
 
-mostrarMensaje(`✅ Registro exitoso. Redirigiendo en ${segundos}...`, "success");
-
-const intervalo = setInterval(() => {
-    segundos--;
-
-    if (segundos > 0) {
-        mostrarMensaje(`✅ Registro exitoso. Redirigiendo en ${segundos}...`, "success");
-    } else {
-        clearInterval(intervalo);
-        window.location.href = "/login.html";
-    }
-}, 1000);
+                // Redirigir a la página de verificación de código
+                setTimeout(() => {
+                    window.location.href = `/verificar-cuenta.html?id=${usuarioId}`;
+                }, 2000);
 
             } catch (error) {
                 console.error("❌ Error:", error);
