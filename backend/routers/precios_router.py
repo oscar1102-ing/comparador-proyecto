@@ -11,13 +11,15 @@ from models.favorito_model import FavoritoCrear
 from models.tienda_model import TiendaCrear
 from models.mfa_model import VerificarMFA
 from database import conectar_base
+import repositories.usuario_repository as usuario_repo
 
 router = APIRouter()
 
 # ── PRODUCTOS ──
 @router.get("/productos")
-def obtener_productos(q: str = "", pagina: int = 1, por_pagina: int = 10):
-    return precio_service.comparar_precios_producto(q, pagina, por_pagina)
+def obtener_productos(q: str = "", categoria: str = "", pagina: int = 1, por_pagina: int = 10):
+    return precio_service.comparar_precios_producto(q, categoria, pagina, por_pagina)
+
 
 @router.get("/productos/top")
 def top_productos():
@@ -29,7 +31,7 @@ def crear_producto(datos: ProductoCrear):
 
 @router.put("/productos/{id}")
 def actualizar_producto(id: int, datos: ProductoActualizar):
-    return producto_service.actualizar_producto(id, datos)
+    return producto_service.actualizar_producto(iad, datos)
 
 @router.delete("/productos/{id}")
 def eliminar_producto(id: int):
@@ -151,3 +153,31 @@ def listar_usuarios():
     cursor.close()
     conexion.close()
     return [{"id": f[0], "nombre": f[1], "email": f[2], "rol": f[3], "fecha_registro": str(f[4])} for f in filas]
+    
+@router.post("/reenviar-codigo")
+def reenviar_codigo(datos: dict):
+    usuario_id = datos.get("usuario_id")
+    if not usuario_id:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+    resultado = usuario_service.reenviar_codigo(usuario_id)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+    
+@router.delete("/admin/usuarios/{id}")
+def eliminar_usuario(id: int):
+    resultado = usuario_repo.eliminar_usuario(id)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+
+
+@router.put("/admin/usuarios/{id}/rol")
+def cambiar_rol_usuario(id: int, datos: dict):
+    nuevo_rol = datos.get("rol")
+    if not nuevo_rol:
+        raise HTTPException(status_code=400, detail="Falta el rol")
+    resultado = usuario_repo.cambiar_rol(id, nuevo_rol)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado

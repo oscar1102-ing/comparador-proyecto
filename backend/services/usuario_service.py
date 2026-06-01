@@ -74,3 +74,16 @@ def verificar_token(token: str):
         return payload
     except:
         return None
+        
+def reenviar_codigo(usuario_id: int):
+    usuario = repo.obtener_usuario_por_id(usuario_id)
+    if not usuario:
+        return {"error": "Usuario no encontrado"}
+    
+    codigo = codigo_repository.generar_codigo(usuario_id)
+    enviado = email_service.enviar_codigo(usuario[2], codigo, usuario[1])
+    
+    if not enviado:
+        return {"error": "Error al enviar el código"}
+    
+    return {"mensaje": "Código reenviado"}

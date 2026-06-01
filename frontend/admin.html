@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel Admin</title>
+    <link rel="icon" href="imagenes/logo1.png">
     <link rel="stylesheet" href="styles.css">
     <style>
         .admin-container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
@@ -25,6 +26,15 @@
         .admin-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .btn-eliminar { background: #ef4444; color: white; border: none; padding: 5px 10px;
                         border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .btn-eliminar:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* Colores por rol */
+        .badge-root    { background: #7c3aed; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-admin   { background: #ff6b00; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-premium { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-usuario { background: #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+
+        .select-rol { padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -39,9 +49,9 @@
     <h2>⚙️ Panel de Administración</h2>
 
     <div class="admin-tabs">
-        <button class="tab-btn activo" onclick="mostrarTab('productos')">📦 Productos</button>
-        <button class="tab-btn" onclick="mostrarTab('tiendas')">🏪 Tiendas</button>
-        <button class="tab-btn" onclick="mostrarTab('usuarios')">👥 Usuarios</button>
+        <button class="tab-btn activo" onclick="mostrarTab('productos', event)">📦 Productos</button>
+        <button class="tab-btn" onclick="mostrarTab('tiendas', event)">🏪 Tiendas</button>
+        <button class="tab-btn" onclick="mostrarTab('usuarios', event)">👥 Usuarios</button>
     </div>
 
     <!-- TAB PRODUCTOS -->
@@ -51,16 +61,14 @@
             <div class="admin-form">
                 <input type="text" id="prod-nombre" placeholder="Nombre del producto">
                 <input type="text" id="prod-descripcion" placeholder="Descripción">
-                <select id="prod-categoria">
-                    <option value="">-- Categoría --</option>
-                </select>
-                <select id="prod-marca">
-                    <option value="">-- Marca --</option>
-                </select>
+                <input type="text" id="prod-imagen-url" placeholder="URL de imagen (opcional)">
+                <div style="text-align:center; color:#94a3b8; font-size:12px; margin: -6px 0">— o —</div>
+                <input type="file" id="prod-imagen-file" accept="image/*" onchange="previsualizarImagen(this)">
+                <img id="preview-imagen" src="" alt="preview"
+                     style="display:none; max-height:100px; border-radius:8px; object-fit:cover;">
+                <select id="prod-categoria"><option value="">-- Categoría --</option></select>
                 <input type="number" id="prod-precio" placeholder="Precio">
-                <select id="prod-tienda">
-                    <option value="">-- Tienda --</option>
-                </select>
+                <select id="prod-tienda"><option value="">-- Tienda --</option></select>
                 <button onclick="crearProducto()">➕ Agregar producto</button>
             </div>
         </div>
@@ -97,21 +105,28 @@
 
 <script src="script.js"></script>
 <script>
+// ── PROTECCIÓN: solo admin y root pueden entrar ──
 const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-if (!usuario || usuario.rol !== "admin") {
+if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "root")) {
     window.location.href = "/index.html";
 }
 
 const API = "/api";
 
-function mostrarTab(tab) {
+function mostrarTab(tab, event) {
     document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("activo"));
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("activo"));
     document.getElementById(`tab-${tab}`).classList.add("activo");
-    event.target.classList.add("activo");
+    if (event) event.target.classList.add("activo");
     if (tab === "productos") cargarProductosAdmin();
     if (tab === "tiendas") cargarTiendasAdmin();
     if (tab === "usuarios") cargarUsuariosAdmin();
+}
+
+// ── BADGE DE ROL ──
+function badgeRol(rol) {
+    const iconos = { root: "👑", admin: "⚙️", premium: "⭐", usuario: "👤" };
+    return `<span class="badge-${rol}">${iconos[rol] || ""} ${rol}</span>`;
 }
 
 // ── PRODUCTOS ──
@@ -119,11 +134,14 @@ async function cargarProductosAdmin() {
     const res = await fetch(`${API}/productos?q=`);
     const data = await res.json();
     const contenedor = document.getElementById("lista-productos-admin");
-    if (data.length === 0) { contenedor.innerHTML = "<p>Sin productos.</p>"; return; }
+    if (!data.productos || data.productos.length === 0) {
+        contenedor.innerHTML = "<p>Sin productos.</p>";
+        return;
+    }
     contenedor.innerHTML = `
         <table class="admin-table">
             <thead><tr><th>ID</th><th>Nombre</th><th>Tienda</th><th>Precio</th><th>Acción</th></tr></thead>
-            <tbody>${data.map(p => `
+            <tbody>${data.productos.map(p => `
                 <tr>
                     <td>${p.id}</td>
                     <td>${p.nombre}</td>
@@ -137,20 +155,27 @@ async function cargarProductosAdmin() {
 }
 
 async function crearProducto() {
+    let imagen_url = document.getElementById("prod-imagen-url").value.trim();
+    const archivo = document.getElementById("prod-imagen-file").files[0];
+    if (archivo) {
+        imagen_url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(archivo);
+        });
+    }
     const datos = {
         nombre: document.getElementById("prod-nombre").value,
         descripcion: document.getElementById("prod-descripcion").value,
         categoria_id: parseInt(document.getElementById("prod-categoria").value),
-        marca_id: parseInt(document.getElementById("prod-marca").value),
         precio: parseFloat(document.getElementById("prod-precio").value),
-        tienda_id: parseInt(document.getElementById("prod-tienda").value)
+        tienda_id: parseInt(document.getElementById("prod-tienda").value),
+        imagen_url: imagen_url || null
     };
-
     if (!datos.nombre || !datos.categoria_id || !datos.marca_id || !datos.tienda_id) {
         mostrarToast("Completa todos los campos", "error");
         return;
     }
-
     const res = await fetch(`${API}/productos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -160,12 +185,31 @@ async function crearProducto() {
     if (res.ok) {
         mostrarToast("Producto creado");
         cargarProductosAdmin();
+        document.getElementById("prod-nombre").value = "";
+        document.getElementById("prod-descripcion").value = "";
+        document.getElementById("prod-imagen-url").value = "";
+        document.getElementById("prod-imagen-file").value = "";
+        document.getElementById("preview-imagen").style.display = "none";
     } else {
         mostrarToast(data.detail || "Error", "error");
     }
 }
 
+function previsualizarImagen(input) {
+    const preview = document.getElementById("preview-imagen");
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+            document.getElementById("prod-imagen-url").value = "";
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 async function eliminarProducto(id) {
+    if (!confirm("¿Eliminar este producto?")) return;
     const res = await fetch(`${API}/productos/${id}`, { method: "DELETE" });
     if (res.ok) { mostrarToast("Producto eliminado", "info"); cargarProductosAdmin(); }
 }
@@ -205,43 +249,140 @@ async function cargarUsuariosAdmin() {
     const res = await fetch(`${API}/admin/usuarios`);
     const data = await res.json();
     const contenedor = document.getElementById("lista-usuarios-admin");
+    const usuarioActual = JSON.parse(localStorage.getItem("usuario") || "null");
+    const esRootActual = usuarioActual?.rol === "root";
+    const totalRoots = data.filter(u => u.es_root || u.rol === 'root').length;
+
     contenedor.innerHTML = `
         <table class="admin-table">
-            <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Registro</th></tr></thead>
-            <tbody>${data.map(u => `
+            <thead>
                 <tr>
-                    <td>${u.id}</td>
-                    <td>${u.nombre}</td>
-                    <td>${u.email}</td>
-                    <td><span style="background:${u.rol==='admin'?'#ff6b00':'#e2e8f0'};
-                        color:${u.rol==='admin'?'white':'#64748b'};
-                        padding:2px 8px; border-radius:4px; font-size:12px;">${u.rol}</span></td>
-                    <td>${new Date(u.fecha_registro).toLocaleDateString("es-CO")}</td>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Registro</th>
+                    <th>Acciones</th>
                 </tr>
-            `).join("")}</tbody>
+            </thead>
+            <tbody>
+                ${data.map(u => {
+                    const esRoot = u.es_root || u.rol === "root";
+                    const esMismoUsuario = u.id === usuarioActual?.id;
+
+                    const selectorRol = (esRoot && totalRoots <= 1) || esMismoUsuario
+                        ? badgeRol(u.rol)
+                        : `
+                            <select class="select-rol" onchange="cambiarRol(${u.id}, this.value)" 
+                                    ${!esRootActual ? 'disabled title="Solo el root puede cambiar roles"' : ''}>
+                                <option value="usuario"  ${u.rol === "usuario"  ? "selected" : ""}>👤 usuario</option>
+                                <option value="premium"  ${u.rol === "premium"  ? "selected" : ""}>⭐ premium</option>
+                                <option value="admin"    ${u.rol === "admin"    ? "selected" : ""}>⚙️ admin</option>
+                                <option value="root"     ${u.rol === "root"     ? "selected" : ""}>👑 root</option>
+                            </select>
+                        `;
+
+                    const btnEliminar = esMismoUsuario
+                        ? `<button class="btn-eliminar" disabled title="No puedes eliminarte a ti mismo">🔒 Tú</button>`
+                        : (esRoot && totalRoots <= 1)
+                        ? `<button class="btn-eliminar" disabled title="No se puede eliminar el único root">🔒 Root</button>`
+                        : `<button class="btn-eliminar" onclick="eliminarUsuario(${u.id}, '${u.nombre}')"
+                                   ${!esRootActual ? 'disabled title="Solo el root puede eliminar usuarios"' : ''}>
+                               🗑 Eliminar
+                           </button>`;
+
+                    return `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.nombre} ${esRoot ? "👑" : ""}</td>
+                            <td>${u.email}</td>
+                            <td>${selectorRol}</td>
+                            <td>${new Date(u.fecha_registro).toLocaleDateString("es-CO")}</td>
+                            <td>${btnEliminar}</td>
+                        </tr>
+                    `;
+                }).join("")}
+            </tbody>
         </table>
     `;
 }
 
+async function eliminarUsuario(id, nombre) {
+    mostrarModal(
+        "¿Eliminar usuario?",
+        `¿Estás seguro de eliminar a "${nombre}"? Esta acción no se puede deshacer.`,
+        async () => {
+            const res = await fetch(`${API}/admin/usuarios/${id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (res.ok) {
+                mostrarToast("Usuario eliminado", "info");
+                cargarUsuariosAdmin();
+            } else {
+                mostrarToast(data.detail || "Error al eliminar", "error");
+            }
+        }
+    );
+}
+
+async function cambiarRol(id, nuevoRol) {
+    const res = await fetch(`${API}/admin/usuarios/${id}/rol`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rol: nuevoRol })
+    });
+    const data = await res.json();
+    if (res.ok) {
+        mostrarToast(`Rol actualizado a ${nuevoRol}`);
+    } else {
+        mostrarToast(data.detail || "Error al cambiar rol", "error");
+        cargarUsuariosAdmin(); // recargar para revertir el select
+    }
+}
+
 async function cargarSelects() {
-    const [cats, marcas, tiendas] = await Promise.all([
+    const [cats, tiendas] = await Promise.all([
         fetch(`${API}/categorias`).then(r => r.json()),
-        fetch(`${API}/marcas`).then(r => r.json()),
         fetch(`${API}/tiendas`).then(r => r.json())
     ]);
-
     const selCat = document.getElementById("prod-categoria");
     cats.forEach(c => selCat.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
-
-    const selMarca = document.getElementById("prod-marca");
-    marcas.forEach(m => selMarca.innerHTML += `<option value="${m.id}">${m.nombre}</option>`);
-
     const selTienda = document.getElementById("prod-tienda");
     tiendas.forEach(t => selTienda.innerHTML += `<option value="${t.id}">${t.nombre}</option>`);
+}
+
+function mostrarModal(titulo, mensaje, accion) {
+    document.getElementById("modal-titulo").textContent = titulo;
+    document.getElementById("modal-mensaje").textContent = mensaje;
+    document.getElementById("modal-confirmar-btn").onclick = () => {
+        cerrarModal();
+        accion();
+    };
+    document.getElementById("modal-confirmar").style.display = "flex";
+}
+
+function cerrarModal() {
+    document.getElementById("modal-confirmar").style.display = "none";
 }
 
 cargarSelects();
 cargarProductosAdmin();
 </script>
+
+<div id="modal-confirmar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px; border-radius:12px; max-width:400px; width:90%; text-align:center;">
+        <h3 id="modal-titulo" style="margin-bottom:10px;">¿Estás seguro?</h3>
+        <p id="modal-mensaje" style="color:#64748b; margin-bottom:20px;"></p>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="cerrarModal()" 
+                style="padding:10px 20px; border:1px solid #e2e8f0; border-radius:8px; 
+                       cursor:pointer; background:white;">Cancelar</button>
+            <button id="modal-confirmar-btn"
+                style="padding:10px 20px; border:none; border-radius:8px; 
+                       background:#ef4444; color:white; cursor:pointer;">Eliminar</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

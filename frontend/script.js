@@ -68,14 +68,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// ── UTILIDADES ──
+function formatearPrecio(precio) {
+    return precio.toLocaleString('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    });
+}
+
+
 // ── PAGINACIÓN ──
 let paginaActual = 1;
 let totalPaginas = 1;
 let busquedaActual = "";
 
 async function cargarProductos(pagina = 1) {
+
     const params = new URLSearchParams(window.location.search);
     busquedaActual = params.get("q") || "";
+    const categoriaActual = params.get("categoria") || "";
 
     const contenedor = document.getElementById("lista-productos");
     if (!contenedor) return;
@@ -85,7 +97,9 @@ async function cargarProductos(pagina = 1) {
     // Actualizar texto búsqueda
     const textoBusqueda = document.getElementById("texto-busqueda");
     if (textoBusqueda) {
-        textoBusqueda.textContent = busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
+        textoBusqueda.textContent = categoriaActual 
+            ? categoriaActual.charAt(0).toUpperCase() + categoriaActual.slice(1)
+            : busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
     }
 
     const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -98,7 +112,7 @@ async function cargarProductos(pagina = 1) {
     }
 
     try {
-        const response = await fetch(`/api/productos?q=${busquedaActual}&pagina=${pagina}&por_pagina=10`);
+        const response = await fetch(`/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&pagina=${pagina}&por_pagina=10`);
         const data = await response.json();
 
         paginaActual = data.pagina;
@@ -135,7 +149,7 @@ async function cargarProductos(pagina = 1) {
                          alt="producto" style="width:100px; height:100px; object-fit:contain;">
                     <div class="info-producto-busqueda">
                         <h3>${prod.nombre}</h3>
-                        <p class="precio">$${prod.precio}</p>
+                        <p class="precio">${formatearPrecio(prod.precio)}</p>
                         <p>${prod.tienda}</p>
                         <a href="producto.html?nombre=${prod.nombre}">Ver producto</a>
                         ${botonFavorito}
@@ -195,7 +209,7 @@ async function cargarTop() {
                 <img src="${(p.imagen && p.imagen !== 'null') ? p.imagen : 'imagenes/logo1.png'}"
                      style="width:100px; height:100px; object-fit:contain;">
                 <h3>${p.nombre}</h3>
-                <p>$${p.precio}</p>
+                <p>${formatearPrecio(p.precio)}</p>
                 <a href="producto.html?nombre=${p.nombre}">Ver</a>
             </div>
         `;
@@ -230,7 +244,17 @@ async function cargarDetalle() {
     const tiendasDiv = document.getElementById("tiendas");
     tiendasDiv.innerHTML = "";
     data.tiendas.forEach(t => {
-        tiendasDiv.innerHTML += `<p>${t.tienda} - $${t.precio}</p>`;
+        tiendasDiv.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; 
+                        padding:10px; border-bottom:1px solid #eee;">
+                <span>${t.tienda}</span>
+                <span class="precio">${formatearPrecio(t.precio)}</span>
+                ${t.url ? `<a href="${t.url}" target="_blank" 
+                    style="background:#ff7a00; color:white; padding:8px 14px; 
+                    border-radius:5px; text-decoration:none; font-size:14px;">
+                    Comprar →</a>` : ''}
+            </div>
+        `;
     });
 
     const similaresDiv = document.getElementById("similares");
@@ -239,7 +263,7 @@ async function cargarDetalle() {
         similaresDiv.innerHTML += `
             <div>
                 <h4>${s.nombre}</h4>
-                <p>$${s.precio}</p>
+                <p>${formatearPrecio(s.precio)}</p>
                 <a href="producto.html?nombre=${s.nombre}">Ver</a>
             </div>
         `;
@@ -252,12 +276,17 @@ function actualizarHeader() {
     const authDiv = document.querySelector(".auth-buttons");
     if (!authDiv) return;
     if (usuario) {
-        const esAdmin = usuario.rol === "admin";
+        const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
             <span class="btn-auth">Hola, ${usuario.nombre}</span>
             ${esAdmin ? '<a href="admin.html" class="btn-auth" style="background:#1e293b;">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth">Mi cuenta</a>
             <button class="btn-auth" onclick="cerrarSesion()">Salir</button>
+        `;
+    } else {
+        authDiv.innerHTML = `
+            <a href="login.html" class="btn-auth">Ingresar</a>
+            <a href="registrar.html" class="btn-auth">Registro</a>
         `;
     }
 }
