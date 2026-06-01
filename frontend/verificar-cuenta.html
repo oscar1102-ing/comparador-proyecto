@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificar Google Authenticator - PriceCompare</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="imagenes/logo1.png">
+    <style>
+        .verify-card {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .codigo-input {
+            text-align: center;
+            font-size: 28px;
+            letter-spacing: 10px;
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .info {
+            background: #fff8f0;
+            border-left: 4px solid #ff7a00;
+            padding: 12px 16px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+</header>
+
+<main class="auth-container">
+    <div class="auth-card verify-card">
+        <h2 style="text-align:center;">Activa tu cuenta</h2>
+        <div class="info">
+            📧 Te enviamos un código QR a tu correo.<br>
+            Escanéalo con <strong>Google Authenticator</strong> y escribe aquí el código de 6 dígitos.
+        </div>
+        <input type="text" id="codigoTotp" class="codigo-input" placeholder="000000" maxlength="6" inputmode="numeric">
+        <button id="btnVerificar" style="width:100%; margin-top:20px;">Verificar y Activar</button>
+        <div id="mensaje" style="margin-top:15px;"></div>
+    </div>
+</main>
+<script src="verificar-cuenta.js"></script>
+</body>
+</html>
