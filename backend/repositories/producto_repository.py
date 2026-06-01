@@ -142,11 +142,11 @@ def obtener_similares(nombre: str):
     palabra = nombre.split(" ")[0].lower()
 
     consulta = """
-    SELECT p.nombre, MIN(pr.precio) as precio
+    SELECT p.nombre, MIN(pr.precio) as precio, p.imagen_url
     FROM productos p
     JOIN precios pr ON pr.producto_id = p.id
     WHERE LOWER(p.nombre) LIKE %s
-    GROUP BY p.nombre
+    GROUP BY p.nombre, p.imagen_url
     LIMIT 5
     """
 
@@ -160,7 +160,8 @@ def obtener_similares(nombre: str):
     for fila in resultado:
         similares.append({
             "nombre": fila[0],
-            "precio": float(fila[1])
+            "precio": float(fila[1]),
+            "imagen": fila[2] or ""   # ← usamos "imagen" (como espera el frontend) y mapeamos desde imagen_url
         })
 
     return similares

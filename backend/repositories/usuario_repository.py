@@ -188,3 +188,7 @@ def eliminar_cuentas_expiradas():
     cursor.close()
     conexion.close()
     return eliminados
+
+
+
+
