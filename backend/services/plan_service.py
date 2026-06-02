@@ -195,3 +195,73 @@ def obtener_info_plan(usuario_id: int):
     finally:
         cursor.close()
         conexion.close()
+        
+    
+# ============================================
+# AGREGAR ESTA FUNCIÓN A TU plan_service.py
+# También agrega al inicio: from services import factura_service, email_service
+# ============================================
+ 
+def solicitar_plan(usuario_id: int, plan: str):
+    # Normalizar
+    plan = plan.strip().lower()
+    
+    # Únicos planes válidos (sin 'usuario')
+    planes_validos = ["basico", "pro", "usuario"]
+    if plan not in planes_validos:
+        return {"error": f"Plan inválido: '{plan}'. Válidos: {planes_validos}"}
+    
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("SELECT nombre, email, rol FROM usuarios WHERE id = %s", (usuario_id,))
+        fila = cursor.fetchone()
+        if not fila:
+            return {"error": "Usuario no encontrado"}
+        nombre, email, rol_actual = fila
+        
+        if rol_actual == plan:
+            nombres = {"basico": "Básico", "pro": "Pro", "usuario": "Gratuito"}
+            return {"error": f"Ya tienes el {nombres[plan]} activo"}
+        
+        # Factura y email (asegúrate de que estas funciones acepten 'gratuito')
+        from services.factura_service import generar_factura_pdf
+        from services.email_service import enviar_factura_plan
+        pdf_bytes = generar_factura_pdf(nombre, email, plan)
+        enviado = enviar_factura_plan(email, nombre, plan, pdf_bytes)
+        if not enviado:
+            return {"error": "No se pudo enviar el correo."}
+        
+        # Actualizar rol
+        cursor.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (plan, usuario_id))
+        conexion.commit()
+        
+        # Generar nuevo token
+        import jwt
+        from datetime import datetime, timedelta
+        import os
+        SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_cambiala")
+        ALGORITHM = "HS256"
+        cursor.execute("SELECT id, nombre, email, rol FROM usuarios WHERE id = %s", (usuario_id,))
+        u = cursor.fetchone()
+        nuevo_token = jwt.encode({
+            "sub": str(u[0]),
+            "nombre": u[1],
+            "email": u[2],
+            "rol": u[3],
+            "exp": datetime.utcnow() + timedelta(days=7)
+        }, SECRET_KEY, algorithm=ALGORITHM)
+        
+        return {
+            "mensaje": "Plan activado exitosamente",
+            "plan": plan,
+            "token": nuevo_token,
+            "usuario": {"id": u[0], "nombre": u[1], "email": u[2], "rol": u[3]}
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+        conexion.close()

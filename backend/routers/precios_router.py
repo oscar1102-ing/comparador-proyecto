@@ -218,3 +218,36 @@ def eliminar_entrada_historial(historial_id: int, usuario_id: int):
     if "error" in resultado:
         raise HTTPException(status_code=404, detail=resultado["error"])
     return resultado
+    
+    
+@router.post("/plan/solicitar")
+def endpoint_solicitar_plan(datos: dict):
+    usuario_id = datos.get("usuario_id")
+    plan = datos.get("plan")
+    if not usuario_id or not plan:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+    resultado = plan_service.solicitar_plan(usuario_id, plan)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+ 
+ 
+@router.get("/usuarios/{usuario_id}")
+def obtener_usuario_por_id(usuario_id: int):
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    cursor.execute("SELECT id, nombre, email, rol FROM usuarios WHERE id = %s", (usuario_id,))
+    fila = cursor.fetchone()
+    cursor.close()
+    conexion.close()
+    
+    if not fila:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    return {
+        "id": fila[0],
+        "nombre": fila[1],
+        "email": fila[2],
+        "rol": fila[3]
+    }

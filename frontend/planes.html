@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes - PriceCompare</title>
+    <link rel="icon" href="imagenes/logo1.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+ 
+        .planes-hero {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff9a3c 100%);
+            padding: 56px 20px 80px;
+            text-align: center;
+            color: white;
+        }
+        .planes-hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 36px; font-weight: 800;
+            margin: 0 0 10px;
+        }
+        .planes-hero p {
+            font-size: 16px; opacity: 0.9; margin: 0;
+        }
+ 
+        .planes-wrap {
+            max-width: 1020px; margin: -44px auto 60px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+ 
+        .plan-card {
+            background: white; border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 32px 28px 28px;
+            display: flex; flex-direction: column;
+            position: relative; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .plan-card:hover { transform: translateY(-4px); box-shadow: 0 10px 36px rgba(0,0,0,0.14); }
+ 
+        .plan-card.destacado {
+            border: 2.5px solid #ff6b00;
+            transform: scale(1.03);
+            box-shadow: 0 8px 36px rgba(255,107,0,0.18);
+        }
+        .plan-card.destacado:hover { transform: scale(1.03) translateY(-4px); }
+ 
+        .badge-popular {
+            position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+            background: #ff6b00; color: white; font-size: 12px; font-weight: 700;
+            padding: 4px 18px; border-radius: 20px; white-space: nowrap;
+            font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;
+        }
+ 
+        .plan-icono { font-size: 36px; margin-bottom: 12px; }
+ 
+        .plan-nombre {
+            font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700;
+            color: #1e293b; margin: 0 0 4px;
+        }
+        .plan-desc { font-size: 13px; color: #94a3b8; margin: 0 0 20px; }
+ 
+        .plan-precio {
+            font-family: 'Outfit', sans-serif; font-size: 34px; font-weight: 800;
+            color: #ff6b00; margin: 0 0 2px; line-height: 1;
+        }
+        .plan-precio span { font-size: 15px; font-weight: 500; color: #94a3b8; }
+        .plan-precio-gratis { font-size: 28px; color: #22c55e; }
+ 
+        .plan-divider {
+            height: 1px; background: #f1f5f9; margin: 20px 0;
+        }
+ 
+        .plan-features { list-style: none; padding: 0; margin: 0 0 24px; flex: 1; }
+        .plan-features li {
+            display: flex; align-items: flex-start; gap: 10px;
+            font-size: 14px; color: #475569; padding: 7px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .plan-features li:last-child { border-bottom: none; }
+        .feat-check { color: #22c55e; font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+        .feat-x     { color: #cbd5e1; font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+        .feat-text-off { color: #cbd5e1; }
+ 
+        .btn-plan {
+            width: 100%; padding: 13px; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            font-family: 'Outfit', sans-serif; transition: all 0.2s;
+        }
+        .btn-plan-gratis {
+            background: #f1f5f9; color: #64748b;
+        }
+        .btn-plan-gratis:hover { background: #e2e8f0; }
+        .btn-plan-pago {
+            background: #ff6b00; color: white;
+        }
+        .btn-plan-pago:hover { background: #e96d00; }
+        .btn-plan-activo {
+            background: #dcfce7; color: #16a34a; cursor: default;
+        }
+        .btn-plan-pago:disabled { background: #ffd4b3; cursor: wait; }
+ 
+        /* Tabla comparativa */
+        .comparativa-wrap {
+            max-width: 860px; margin: 0 auto 60px; padding: 0 20px;
+        }
+        .comparativa-wrap h2 {
+            font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700;
+            color: #1e293b; text-align: center; margin-bottom: 24px;
+        }
+        .tabla-comp {
+            width: 100%; border-collapse: collapse;
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        .tabla-comp th {
+            background: #f8fafc; padding: 14px 18px; font-size: 13px;
+            color: #64748b; text-align: center; border-bottom: 1px solid #e2e8f0;
+        }
+        .tabla-comp th:first-child { text-align: left; }
+        .tabla-comp td {
+            padding: 13px 18px; font-size: 14px; color: #475569;
+            border-bottom: 1px solid #f1f5f9; text-align: center;
+        }
+        .tabla-comp td:first-child { text-align: left; font-weight: 500; color: #1e293b; }
+        .tabla-comp tr:last-child td { border-bottom: none; }
+        .tabla-comp tr:nth-child(even) td { background: #fafafa; }
+        .check-verde { color: #22c55e; font-size: 18px; }
+        .check-gris  { color: #cbd5e1; font-size: 18px; }
+        .col-pro { background: #fff8f0 !important; }
+ 
+        @media (max-width: 700px) {
+            .planes-wrap { grid-template-columns: 1fr; }
+            .plan-card.destacado { transform: scale(1); }
+            .tabla-comp { font-size: 12px; }
+            .tabla-comp td, .tabla-comp th { padding: 10px 10px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
+    </div>
+    <form class="buscador" action="busquedaProducto.html" method="GET">
+        <input type="search" name="q" placeholder="Buscar productos..." required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div class="auth-buttons"></div>
+</header>
+ 
+<!-- HERO -->
+<div class="planes-hero">
+    <h1>Elige tu plan</h1>
+    <p>Compara más, ahorra más. Sin compromisos.</p>
+</div>
+ 
+<!-- TARJETAS DE PLANES -->
+<div class="planes-wrap">
+ 
+    <!-- GRATUITO -->
+    <div class="plan-card">
+        <div class="plan-icono">👤</div>
+        <div class="plan-nombre">Gratuito</div>
+        <div class="plan-desc">Para empezar a comparar</div>
+        <div class="plan-precio plan-precio-gratis">$0 <span>/ siempre</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Ver productos y precios</li>
+            <li><span class="feat-check">✓</span> 5 comparaciones por mes</li>
+            <li><span class="feat-check">✓</span> 5 productos favoritos</li>
+            <li><span class="feat-check">✓</span> Historial últimas 10 búsquedas</li>
+            <li><span class="feat-x">✗</span> <span class="feat-text-off">Alertas de precio</span></li>
+            <li><span class="feat-x">✗</span> <span class="feat-text-off">Historial de precios</span></li>
+        </ul>
+        <button class="btn-plan btn-plan-gratis" id="btn-gratis" onclick="manejarGratis()">
+            Comenzar gratis
+        </button>
+    </div>
+ 
+    <!-- BÁSICO (destacado) -->
+    <div class="plan-card destacado">
+        <div class="badge-popular">⭐ MÁS POPULAR</div>
+        <div class="plan-icono">⭐</div>
+        <div class="plan-nombre">Básico</div>
+        <div class="plan-desc">Para comparadores frecuentes</div>
+        <div class="plan-precio">$19.900 <span>/ mes</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Ver productos y precios</li>
+            <li><span class="feat-check">✓</span> 20 comparaciones por mes</li>
+            <li><span class="feat-check">✓</span> 50 productos favoritos</li>
+            <li><span class="feat-check">✓</span> Historial completo</li>
+            <li><span class="feat-check">✓</span> Alertas para 3 productos</li>
+            <li><span class="feat-x">✗</span> <span class="feat-text-off">Historial de precios</span></li>
+        </ul>
+        <button class="btn-plan btn-plan-pago" id="btn-basico"
+                onclick="solicitarPlan('basico', this)">
+            Suscribirse al Básico
+        </button>
+    </div>
+ 
+    <!-- PRO -->
+    <div class="plan-card">
+        <div class="plan-icono">💎</div>
+        <div class="plan-nombre">Pro</div>
+        <div class="plan-desc">Para el comparador experto</div>
+        <div class="plan-precio">$39.900 <span>/ mes</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+            <li><span class="feat-check">✓</span> Ver productos y precios</li>
+            <li><span class="feat-check">✓</span> Comparaciones ilimitadas</li>
+            <li><span class="feat-check">✓</span> Favoritos ilimitados</li>
+            <li><span class="feat-check">✓</span> Historial ilimitado</li>
+            <li><span class="feat-check">✓</span> Alertas ilimitadas</li>
+            <li><span class="feat-check">✓</span> Historial de precios del producto</li>
+        </ul>
+        <button class="btn-plan btn-plan-pago" id="btn-pro"
+                onclick="solicitarPlan('pro', this)">
+            Suscribirse al Pro
+        </button>
+    </div>
+</div>
+ 
+<!-- TABLA COMPARATIVA -->
+<div class="comparativa-wrap">
+    <h2>Comparación detallada</h2>
+    <table class="tabla-comp">
+        <thead>
+            <tr>
+                <th>Característica</th>
+                <th>Gratuito</th>
+                <th>Básico</th>
+                <th style="background:#fff3ea; color:#cc4e00;">💎 Pro</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Comparaciones / mes</td>
+                <td>5</td>
+                <td>20</td>
+                <td class="col-pro" style="font-weight:700; color:#ff6b00;">Ilimitadas</td>
+            </tr>
+            <tr>
+                <td>Favoritos</td>
+                <td>5</td>
+                <td>50</td>
+                <td class="col-pro" style="font-weight:700; color:#ff6b00;">Ilimitados</td>
+            </tr>
+            <tr>
+                <td>Historial de búsquedas</td>
+                <td>10 búsquedas</td>
+                <td>Completo</td>
+                <td class="col-pro" style="font-weight:700; color:#ff6b00;">Completo</td>
+            </tr>
+            <tr>
+                <td>Mapa de tiendas físicas</td>
+                <td><span class="check-verde">✓</span></td>
+                <td><span class="check-verde">✓</span></td>
+                <td class="col-pro"><span class="check-verde">✓</span></td>
+            </tr>
+            <tr>
+                <td>Alertas de precio</td>
+                <td><span class="check-gris">✗</span></td>
+                <td>3 productos</td>
+                <td class="col-pro" style="font-weight:700; color:#ff6b00;">Ilimitadas</td>
+            </tr>
+            <tr>
+                <td>Historial de precios</td>
+                <td><span class="check-gris">✗</span></td>
+                <td><span class="check-gris">✗</span></td>
+                <td class="col-pro"><span class="check-verde">✓</span></td>
+            </tr>
+            <tr>
+                <td>Soporte</td>
+                <td>Comunidad</td>
+                <td>Email</td>
+                <td class="col-pro" style="font-weight:700; color:#ff6b00;">Prioritario</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+ 
+<script src="script.js"></script>
+<script>
+function getUsuario() { return obtenerUsuarioActual(); }
+ 
+// Actualizar botones según el plan actual del usuario
+function actualizarBotonesPlan() {
+    const u = JSON.parse(localStorage.getItem("usuario") || "null");
+    
+    const btnGratis = document.getElementById("btn-gratis");
+    const btnBasico = document.getElementById("btn-basico");
+    const btnPro = document.getElementById("btn-pro");
+
+    // Resetear todos los botones primero
+    btnGratis.textContent = "Comenzar gratis";
+    btnGratis.className = "btn-plan btn-plan-gratis";
+    btnGratis.disabled = false;
+
+    btnBasico.textContent = "Suscribirse al Básico";
+    btnBasico.className = "btn-plan btn-plan-pago";
+    btnBasico.disabled = false;
+
+    btnPro.textContent = "Suscribirse al Pro";
+    btnPro.className = "btn-plan btn-plan-pago";
+    btnPro.disabled = false;
+
+    if (!u) return;
+
+    const rol = u.rol;
+
+    if (rol === "usuario") {
+        btnGratis.textContent = "✓ Plan actual";
+        btnGratis.className = "btn-plan btn-plan-activo";
+    } else if (rol === "basico") {
+        btnBasico.textContent = "✓ Plan actual";
+        btnBasico.className = "btn-plan btn-plan-activo";
+        btnGratis.textContent = "Cambiar a Gratuito";
+    } else if (rol === "pro") {
+        btnPro.textContent = "✓ Plan actual";
+        btnPro.className = "btn-plan btn-plan-activo";
+        btnGratis.textContent = "Cambiar a Gratuito";
+        btnBasico.textContent = "Cambiar a Básico";
+    }
+}
+ 
+function irLogin() {
+    const u = obtenerUsuarioActual();
+    if (u) {
+        mostrarToast("Ya tienes una cuenta activa", "info");
+    } else {
+        window.location.href = "/registrar.html";
+    }
+}
+ 
+async function solicitarPlan(plan, btn) {
+    const usuarioActual = obtenerUsuarioActual();
+    if (!usuarioActual) {
+        mostrarToast("Inicia sesión para suscribirte", "error");
+        setTimeout(() => window.location.href = "/login.html", 1500);
+        return;
+    }
+ 
+    // DESPUÉS
+    const rolActual = JSON.parse(localStorage.getItem("usuario") || "{}").rol;
+    if (rolActual === plan) {
+        mostrarToast("Ya tienes este plan activo", "info");
+        return;
+    }
+ 
+    const nombres = { basico: "Básico", pro: "Pro", usuario: "Gratuito" };
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+ 
+    try {
+        const res = await fetch("/api/plan/solicitar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                usuario_id: parseInt(usuarioActual.id),
+                plan: plan
+            })
+        });
+ 
+        const data = await res.json();
+ 
+        if (!res.ok) {
+            mostrarToast(data.detail || "Error al procesar solicitud", "error");
+            btn.disabled = false;
+            btn.textContent = textoOriginal;
+            return;
+        }
+
+        // Actualizar token y usuario en localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("usuario", JSON.stringify(data.usuario));
+
+        // Actualizar botones
+        actualizarBotonesPlan();
+
+        // Actualizar botón clickeado
+        btn.textContent = "✓ " + nombres[plan] + " activado";
+        btn.className = "btn-plan btn-plan-activo";
+        btn.disabled = false;
+
+        // Mostrar modal
+        mostrarModalConfirmacion(nombres[plan]);
+
+    } catch(err) {
+        mostrarToast("Error de conexión. Intenta de nuevo.", "error");
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+    }
+}
+ 
+function mostrarModalConfirmacion(nombrePlan) {
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.5);
+        display:flex; align-items:center; justify-content:center;
+        z-index:9999; padding:20px;
+    `;
+    // Reemplaza el innerHTML del modal por esto:
+    modal.innerHTML = `
+        <div style="background:white; border-radius:20px; padding:36px;
+                    max-width:420px; width:100%; text-align:center;
+                    box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <div style="font-size:56px; margin-bottom:16px;">🎉</div>
+            <h3 style="font-family:'Outfit',sans-serif; font-size:22px;
+                       font-weight:700; color:#1e293b; margin:0 0 10px;">
+                ¡Plan ${nombrePlan} activado!
+            </h3>
+            <p style="color:#64748b; font-size:14px; line-height:1.6; margin:0 0 24px;">
+                Tu plan ya está activo. Enviamos el comprobante a tu correo.
+            </p>
+            <button onclick="this.closest('div').parentElement.remove()"
+                style="background:#ff6b00; color:white; border:none; padding:12px 32px;
+                       border-radius:10px; font-size:15px; font-weight:700;
+                       cursor:pointer; font-family:'Outfit',sans-serif;">
+                ¡Perfecto!
+            </button>
+        </div>
+    `;
+    modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+async function refrescarUsuarioActual() {
+    const usuarioGuardado = JSON.parse(localStorage.getItem("usuario") || "null");
+    if (!usuarioGuardado || !usuarioGuardado.id) return null;
+    
+    try {
+        // ✅ Cambiado: agregar "/api/" antes de la ruta
+        const response = await fetch(`/api/usuarios/${usuarioGuardado.id}`);
+        
+        if (response.status === 404) {
+            localStorage.removeItem("usuario");
+            localStorage.removeItem("token");
+            return null;
+        }
+        
+        if (!response.ok) {
+            console.warn(`Error ${response.status} al refrescar usuario`);
+            return null;
+        }
+        
+        const usuarioActualizado = await response.json();
+        localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
+        return usuarioActualizado;
+    } catch (error) {
+        console.error("Error de conexión al refrescar usuario:", error);
+        return null;
+    }
+}
+ 
+document.addEventListener("DOMContentLoaded", async () => {   // ✅ async añadido
+    await refrescarUsuarioActual();
+    actualizarHeader();
+    actualizarBotonesPlan();
+});
+
+function manejarGratis() {
+    const u = JSON.parse(localStorage.getItem("usuario") || "null");
+    if (!u) {
+        window.location.href = "/registrar.html";
+    } else if (u.rol === "usuario") {
+        mostrarToast("Ya tienes el plan gratuito", "info");
+    } else {
+        solicitarPlan("usuario", document.getElementById("btn-gratis"));   // ← cambiar a "usuario"
+    }
+}
+</script>
+</body>
+</html>
