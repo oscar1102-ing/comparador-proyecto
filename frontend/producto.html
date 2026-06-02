@@ -51,7 +51,7 @@
 
         .mapa-contenedor { background: #f0f4ff; border-radius: 12px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #4a6fa5; border: 1.5px dashed #b5d4f4; margin-bottom: 16px; }
         .mapa-contenedor p { font-size: 14px; font-weight: 500; }
-        .mapa-contenedor span { font-size: 12px; opacity: 0.7; }
+        .mapa-contenedor span { font-size: 12phx; opacity: 0.7; }
         .pines-mapa { display: flex; gap: 10px; flex-wrap: wrap; }
         .pin-item { display: flex; align-items: center; gap: 6px; background: #f5f5f5; padding: 8px 12px; border-radius: 10px; font-size: 13px; cursor: pointer; border: 0.5px solid #e8e8e8; }
         .pin-item:hover { background: #ebebeb; }
@@ -70,6 +70,9 @@
             .tienda-fila { flex-wrap: wrap; }
         }
     </style>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
     <header>
@@ -132,14 +135,20 @@
             <!-- MAPA -->
             <div class="seccion-card">
                 <div class="seccion-titulo">📍 ¿Dónde comprar en Bogotá?</div>
-                <div id="mapa-tiendas">
-                    <div class="mapa-contenedor">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                        <p>Mapa de tiendas en Bogotá</p>
-                        <span>Próximamente disponible</span>
-                    </div>
-                    <div class="pines-mapa" id="pines-container"></div>
+                <div id="mapa-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+                <div id="mapa-leaflet" style="height:320px; border-radius:12px; overflow:hidden; border:1px solid #e8e8e8;"></div>
+                <div id="mapa-sin-sedes" style="display:none; background:#f9f9f9; border-radius:12px;
+                     padding:32px; text-align:center; border:1.5px dashed #e0e0e0;">
+                    <div style="font-size:36px; margin-bottom:8px;">🌐</div>
+                    <p style="font-weight:600; color:#444; margin:0 0 6px;">Esta tienda no tiene sedes físicas</p>
+                    <p style="color:#888; font-size:13px; margin:0 0 16px;">Solo disponible en línea</p>
+                    <a id="mapa-link-tienda" href="#" target="_blank"
+                       style="background:#ff6b00; color:white; padding:10px 20px; border-radius:8px;
+                              text-decoration:none; font-size:14px; font-weight:600;">
+                        Ir a la tienda →
+                    </a>
                 </div>
+                <div id="lista-sedes" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
             </div>
 
             <!-- SIMILARES -->
@@ -206,6 +215,7 @@
                 document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
 
                 const tiendas = data.tiendas || [];
+                if (tiendas.length > 0) cargarMapaTiendas(tiendas);
 
                 if (tiendas.length > 0) {
                     const precioMin = tiendas[0].precio;
@@ -226,9 +236,7 @@
                     }
 
                     const tiendasDiv = document.getElementById("tiendas");
-                    const pinesContainer = document.getElementById("pines-container");
                     tiendasDiv.innerHTML = "";
-                    pinesContainer.innerHTML = "";
 
                     tiendas.forEach((t, i) => {
                         const esMasBarato = i === 0;
@@ -251,12 +259,7 @@
                             </div>
                         `;
 
-                        pinesContainer.innerHTML += `
-                            <div class="pin-item">
-                                <div class="punto-pin" style="background:${getPinColor(t.tienda)}"></div>
-                                ${t.tienda} ${esMasBarato ? '— Mejor precio' : ''}
-                            </div>
-                        `;
+                        
                     });
                 }
 
@@ -277,7 +280,7 @@
                     data.similares.forEach(s => {
                         similaresDiv.innerHTML += `
                             <a href="producto.html?nombre=${encodeURIComponent(s.nombre)}" class="similar-card-item">
-                                <img src="${s.imagen || 'imagenes/logo1.png'}" alt="${s.nombre}">
+                                <img src="${(s.imagen && s.imagen !== 'null') ? s.imagen : 'imagenes/logo1.png'}" alt="${s.nombre}">
                                 <div class="similar-nombre-item">${s.nombre}</div>
                                 <div class="similar-precio-item">${formatearPrecio(s.precio)}</div>
                             </a>
@@ -296,6 +299,201 @@
             actualizarHeader();
             cargarDetalleProducto();
         });
+    </script>
+    
+    <script>
+    // ── MAPA DE SEDES ──
+
+    let mapaLeaflet = null;
+    let tiendaActivaTab = null;
+    const sedesPorTienda = {};
+
+    // Colores por tienda
+    function getColorTienda(tienda) {
+        const t = tienda.toLowerCase();
+        if (t.includes('mercado')) return '#16a34a';
+        if (t.includes('exito') || t.includes('éxito')) return '#f59e0b';
+        if (t.includes('amazon')) return '#3b82f6';
+        if (t.includes('falabella')) return '#7c3aed';
+        if (t.includes('linio')) return '#ef4444';
+        return '#ff6b00';
+    }
+
+    // Inicializar mapa Leaflet
+    function inicializarMapa() {
+        if (mapaLeaflet) return;
+        mapaLeaflet = L.map('mapa-leaflet').setView([4.65, -74.08], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            maxZoom: 19
+        }).addTo(mapaLeaflet);
+    }
+
+    // Mostrar sedes de una tienda en el mapa
+    function mostrarSedesEnMapa(tienda, sedes) {
+        if (!mapaLeaflet) inicializarMapa();
+
+        // Limpiar marcadores anteriores
+        mapaLeaflet.eachLayer(layer => {
+            if (layer instanceof L.Marker) mapaLeaflet.removeLayer(layer);
+        });
+
+        const color = getColorTienda(tienda);
+
+        if (!sedes || sedes.length === 0) {
+            document.getElementById('mapa-leaflet').style.display = 'none';
+            document.getElementById('mapa-sin-sedes').style.display = 'block';
+            document.getElementById('lista-sedes').innerHTML = '';
+            return;
+        }
+
+        document.getElementById('mapa-leaflet').style.display = 'block';
+        document.getElementById('mapa-sin-sedes').style.display = 'none';
+
+        const bounds = [];
+        const listaSedes = document.getElementById('lista-sedes');
+        listaSedes.innerHTML = `
+            <button onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'flex' : 'none'; this.textContent = this.nextElementSibling.style.display === 'none' ? '📋 Ver sedes (${sedes.length})' : '🔼 Ocultar sedes';"
+                style="background:#f1f5f9; border:1px solid #e2e8f0; padding:8px 16px; border-radius:8px;
+                       cursor:pointer; font-size:13px; color:#64748b; font-weight:500; margin-bottom:8px;">
+                📋 Ver sedes (${sedes.length})
+            </button>
+            <div style="display:none; flex-direction:column; gap:8px;">
+            </div>
+        `;
+        const contenedorSedes = listaSedes.querySelector('div');
+
+        sedes.forEach((sede, i) => {
+            bounds.push([sede.lat, sede.lon]);
+
+            // Ícono circular con color de tienda
+            const icono = L.divIcon({
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                html: `<div style="background:${color}; width:32px; height:32px; border-radius:50%;
+                            display:flex; align-items:center; justify-content:center;
+                            border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.3);
+                            color:white; font-size:12px; font-weight:700;">${i + 1}</div>`
+            });
+
+            const urlGoogle = `https://www.google.com/maps/dir/?api=1&destination=${sede.lat},${sede.lon}`;
+
+            const popup = L.popup({ maxWidth: 240 }).setContent(`
+                <div style="font-family:sans-serif; text-align:center;">
+                    <p style="font-weight:600; margin:0 0 4px; font-size:14px;">${sede.nombre}</p>
+                    <p style="color:#666; font-size:12px; margin:0 0 10px;">📍 ${sede.direccion}</p>
+                    <a href="${urlGoogle}" target="_blank"
+                       style="background:${color}; color:white; padding:6px 14px; border-radius:6px;
+                              text-decoration:none; font-size:12px; font-weight:600;">
+                        Cómo llegar →
+                    </a>
+                </div>
+            `);
+
+            L.marker([sede.lat, sede.lon], { icon: icono })
+                .addTo(mapaLeaflet)
+                .bindPopup(popup);
+
+            // Lista debajo del mapa
+            const urlGoogleLista = `https://www.google.com/maps/dir/?api=1&destination=${sede.lat},${sede.lon}`;
+            contenedorSedes.innerHTML += `
+                <div style="display:flex; align-items:center; gap:10px; padding:10px 12px;
+                            background:#f9f9f9; border-radius:8px; border:0.5px solid #e8e8e8;">
+                    <div style="background:${color}; color:white; width:24px; height:24px; border-radius:50%;
+                                display:flex; align-items:center; justify-content:center;
+                                font-size:11px; font-weight:700; flex-shrink:0;">${i + 1}</div>
+                    <div style="flex:1; min-width:0;">
+                        <p style="margin:0; font-size:13px; font-weight:500;">${sede.nombre}</p>
+                        <p style="margin:0; font-size:11px; color:#888;">${sede.direccion}</p>
+                    </div>
+                    <a href="${urlGoogleLista}" target="_blank"
+                       style="background:#f0f0f0; color:#444; padding:5px 10px; border-radius:6px;
+                              text-decoration:none; font-size:12px; white-space:nowrap;">
+                        Ir →
+                    </a>
+                </div>
+            `;
+        });
+
+        if (bounds.length > 0) {
+            mapaLeaflet.fitBounds(bounds, { padding: [30, 30] });
+        }
+
+        // Forzar redibujado del mapa (necesario cuando está dentro de un card oculto)
+        setTimeout(() => mapaLeaflet.invalidateSize(), 100);
+    }
+
+    // Cambiar tienda activa en los tabs
+    function activarTabTienda(tienda) {
+        tiendaActivaTab = tienda;
+
+        // Actualizar estilos de botones
+        document.querySelectorAll('.tab-tienda-mapa').forEach(btn => {
+            const activo = btn.dataset.tienda === tienda;
+            btn.style.background = activo ? getColorTienda(tienda) : '#f1f5f9';
+            btn.style.color = activo ? 'white' : '#64748b';
+            btn.style.borderColor = activo ? getColorTienda(tienda) : '#e2e8f0';
+        });
+
+        mostrarSedesEnMapa(tienda, sedesPorTienda[tienda] || []);
+    }
+
+    // Cargar mapa con las tiendas del producto
+    async function cargarMapaTiendas(tiendas) {
+        if (!tiendas || tiendas.length === 0) return;
+
+        const tabsContainer = document.getElementById('mapa-tabs');
+        tabsContainer.innerHTML = '';
+
+        try {
+            // Pedir sedes de todas las tiendas a la vez
+            const res = await fetch('/api/sedes/multiples', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tiendas: tiendas.map(t => t.tienda) })
+            });
+            const todasLasSedes = await res.json();
+
+            // Agrupar por tienda
+            tiendas.forEach(t => {
+                sedesPorTienda[t.tienda] = todasLasSedes.filter(s =>
+                    s.tienda.toLowerCase().includes(t.tienda.toLowerCase()) ||
+                    t.tienda.toLowerCase().includes(s.tienda.toLowerCase())
+                );
+            });
+
+            // Crear botones — primero la tienda más barata (tiendas[0])
+            tiendas.forEach((t, i) => {
+                const tieneSedes = (sedesPorTienda[t.tienda] || []).length > 0;
+                const esMasBarata = i === 0;
+
+                const btn = document.createElement('button');
+                btn.className = 'tab-tienda-mapa';
+                btn.dataset.tienda = t.tienda;
+                btn.textContent = `${esMasBarata ? '✓ ' : ''}${t.tienda}${!tieneSedes ? ' 🌐' : ''}`;
+                btn.title = !tieneSedes ? 'Solo online' : `Ver sedes de ${t.tienda}`;
+                btn.style.cssText = `
+                    padding: 8px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+                    cursor: pointer; font-size: 13px; font-weight: 500;
+                    background: #f1f5f9; color: #64748b; transition: all 0.2s;
+                `;
+                btn.onclick = () => activarTabTienda(t.tienda);
+                tabsContainer.appendChild(btn);
+            });
+
+            // Activar automáticamente la tienda más barata
+            if (tiendas.length > 0) {
+                inicializarMapa();
+                activarTabTienda(tiendas[0].tienda);
+            }
+
+        } catch (err) {
+            console.error('Error cargando mapa:', err);
+            document.getElementById('mapa-leaflet').style.display = 'none';
+            document.getElementById('mapa-sin-sedes').style.display = 'none';
+        }
+    }
     </script>
 </body>
 </html>
