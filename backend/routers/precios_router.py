@@ -12,6 +12,7 @@ from models.tienda_model import TiendaCrear
 from models.mfa_model import VerificarMFA
 from database import conectar_base
 import repositories.usuario_repository as usuario_repo
+import repositories.sede_repository as sede_repo
 
 router = APIRouter()
 
@@ -181,3 +182,14 @@ def cambiar_rol_usuario(id: int, datos: dict):
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
+    
+@router.get("/sedes/{nombre_tienda}")
+def obtener_sedes(nombre_tienda: str):
+    return sede_repo.obtener_sedes_por_tienda(nombre_tienda)
+
+@router.post("/sedes/multiples")
+def obtener_sedes_multiples(datos: dict):
+    tiendas = datos.get("tiendas", [])
+    if not tiendas:
+        return []
+    return sede_repo.obtener_sedes_por_tiendas(tiendas)
