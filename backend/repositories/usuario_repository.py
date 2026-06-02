@@ -131,9 +131,11 @@ def eliminar_usuario(id: int):
 # CAMBIAR ROL (protegido: no modifica root)
 # ============================================
 def cambiar_rol(id: int, nuevo_rol: str):
-    roles_validos = ['usuario', 'premium', 'admin', 'root']
+    roles_validos = ['usuario', 'basico', 'pro', 'admin', 'root']
     if nuevo_rol not in roles_validos:
         return {"error": f"Rol inválido. Opciones: {', '.join(roles_validos)}"}
+ 
+    from database import conectar_base
     conexion = conectar_base()
     cursor = conexion.cursor()
     cursor.execute("SELECT es_root, rol FROM usuarios WHERE id = %s", (id,))
@@ -152,7 +154,7 @@ def cambiar_rol(id: int, nuevo_rol: str):
     conexion.close()
     return {"mensaje": f"Rol actualizado a {nuevo_rol}"}
 
-    
+
 # ============================================
 # ACTIVAR MFA (marcar cuenta como activa)
 # ============================================
@@ -188,7 +190,3 @@ def eliminar_cuentas_expiradas():
     cursor.close()
     conexion.close()
     return eliminados
-
-
-
-

@@ -27,13 +27,14 @@
         .btn-eliminar { background: #ef4444; color: white; border: none; padding: 5px 10px;
                         border-radius: 6px; cursor: pointer; font-size: 12px; }
         .btn-eliminar:disabled { background: #cbd5e1; cursor: not-allowed; }
-
+ 
         /* Colores por rol */
         .badge-root    { background: #7c3aed; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         .badge-admin   { background: #ff6b00; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-        .badge-premium { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-pro     { background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-basico  { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         .badge-usuario { background: #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-
+ 
         .select-rol { padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; }
     </style>
 </head>
@@ -44,16 +45,16 @@
     </div>
     <div class="auth-buttons"></div>
 </header>
-
+ 
 <main class="admin-container">
     <h2>⚙️ Panel de Administración</h2>
-
+ 
     <div class="admin-tabs">
         <button class="tab-btn activo" onclick="mostrarTab('productos', event)">📦 Productos</button>
         <button class="tab-btn" onclick="mostrarTab('tiendas', event)">🏪 Tiendas</button>
         <button class="tab-btn" onclick="mostrarTab('usuarios', event)">👥 Usuarios</button>
     </div>
-
+ 
     <!-- TAB PRODUCTOS -->
     <div id="tab-productos" class="tab-content activo">
         <div class="admin-card">
@@ -77,7 +78,7 @@
             <div id="lista-productos-admin"><p>Cargando...</p></div>
         </div>
     </div>
-
+ 
     <!-- TAB TIENDAS -->
     <div id="tab-tiendas" class="tab-content">
         <div class="admin-card">
@@ -93,16 +94,24 @@
             <div id="lista-tiendas-admin"><p>Cargando...</p></div>
         </div>
     </div>
-
+ 
     <!-- TAB USUARIOS -->
     <div id="tab-usuarios" class="tab-content">
         <div class="admin-card">
             <h3>Usuarios registrados</h3>
+            <!-- Leyenda de planes -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+                <span class="badge-usuario">👤 Gratuito</span>
+                <span class="badge-basico">⭐ Básico — 20 comp, 50 fav</span>
+                <span class="badge-pro">💎 Pro — ilimitado</span>
+                <span class="badge-admin">⚙️ Admin</span>
+                <span class="badge-root">👑 Root</span>
+            </div>
             <div id="lista-usuarios-admin"><p>Cargando...</p></div>
         </div>
     </div>
 </main>
-
+ 
 <script src="script.js"></script>
 <script>
 // ── PROTECCIÓN: solo admin y root pueden entrar ──
@@ -110,9 +119,9 @@ const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
 if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "root")) {
     window.location.href = "/index.html";
 }
-
+ 
 const API = "/api";
-
+ 
 function mostrarTab(tab, event) {
     document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("activo"));
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("activo"));
@@ -122,13 +131,13 @@ function mostrarTab(tab, event) {
     if (tab === "tiendas") cargarTiendasAdmin();
     if (tab === "usuarios") cargarUsuariosAdmin();
 }
-
+ 
 // ── BADGE DE ROL ──
 function badgeRol(rol) {
-    const iconos = { root: "👑", admin: "⚙️", premium: "⭐", usuario: "👤" };
-    return `<span class="badge-${rol}">${iconos[rol] || ""} ${rol}</span>`;
+    const iconos = { root: "👑", admin: "⚙️", pro: "💎", basico: "⭐", usuario: "👤" };
+    return `<span class="badge-${rol}">${iconos[rol] || "👤"} ${rol}</span>`;
 }
-
+ 
 // ── PRODUCTOS ──
 async function cargarProductosAdmin() {
     const res = await fetch(`${API}/productos?q=`);
@@ -153,7 +162,7 @@ async function cargarProductosAdmin() {
         </table>
     `;
 }
-
+ 
 async function crearProducto() {
     let imagen_url = document.getElementById("prod-imagen-url").value.trim();
     const archivo = document.getElementById("prod-imagen-file").files[0];
@@ -172,7 +181,7 @@ async function crearProducto() {
         tienda_id: parseInt(document.getElementById("prod-tienda").value),
         imagen_url: imagen_url || null
     };
-    if (!datos.nombre || !datos.categoria_id || !datos.marca_id || !datos.tienda_id) {
+    if (!datos.nombre || !datos.categoria_id || !datos.tienda_id) {
         mostrarToast("Completa todos los campos", "error");
         return;
     }
@@ -194,7 +203,7 @@ async function crearProducto() {
         mostrarToast(data.detail || "Error", "error");
     }
 }
-
+ 
 function previsualizarImagen(input) {
     const preview = document.getElementById("preview-imagen");
     if (input.files && input.files[0]) {
@@ -207,13 +216,13 @@ function previsualizarImagen(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-
+ 
 async function eliminarProducto(id) {
     if (!confirm("¿Eliminar este producto?")) return;
     const res = await fetch(`${API}/productos/${id}`, { method: "DELETE" });
     if (res.ok) { mostrarToast("Producto eliminado", "info"); cargarProductosAdmin(); }
 }
-
+ 
 // ── TIENDAS ──
 async function cargarTiendasAdmin() {
     const res = await fetch(`${API}/tiendas`);
@@ -229,7 +238,7 @@ async function cargarTiendasAdmin() {
         </table>
     `;
 }
-
+ 
 async function crearTienda() {
     const datos = {
         nombre: document.getElementById("tienda-nombre").value,
@@ -243,7 +252,7 @@ async function crearTienda() {
     if (res.ok) { mostrarToast("Tienda creada"); cargarTiendasAdmin(); }
     else mostrarToast("Error al crear tienda", "error");
 }
-
+ 
 // ── USUARIOS ──
 async function cargarUsuariosAdmin() {
     const res = await fetch(`${API}/admin/usuarios`);
@@ -251,46 +260,43 @@ async function cargarUsuariosAdmin() {
     const contenedor = document.getElementById("lista-usuarios-admin");
     const usuarioActual = JSON.parse(localStorage.getItem("usuario") || "null");
     const esRootActual = usuarioActual?.rol === "root";
-    const totalRoots = data.filter(u => u.es_root || u.rol === 'root').length;
-
+    const totalRoots = data.filter(u => u.es_root || u.rol === "root").length;
+ 
     contenedor.innerHTML = `
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Registro</th>
-                    <th>Acciones</th>
+                    <th>ID</th><th>Nombre</th><th>Email</th>
+                    <th>Plan / Rol</th><th>Registro</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 ${data.map(u => {
                     const esRoot = u.es_root || u.rol === "root";
                     const esMismoUsuario = u.id === usuarioActual?.id;
-
+ 
                     const selectorRol = (esRoot && totalRoots <= 1) || esMismoUsuario
                         ? badgeRol(u.rol)
-                        : `
-                            <select class="select-rol" onchange="cambiarRol(${u.id}, this.value)" 
-                                    ${!esRootActual ? 'disabled title="Solo el root puede cambiar roles"' : ''}>
-                                <option value="usuario"  ${u.rol === "usuario"  ? "selected" : ""}>👤 usuario</option>
-                                <option value="premium"  ${u.rol === "premium"  ? "selected" : ""}>⭐ premium</option>
-                                <option value="admin"    ${u.rol === "admin"    ? "selected" : ""}>⚙️ admin</option>
-                                <option value="root"     ${u.rol === "root"     ? "selected" : ""}>👑 root</option>
-                            </select>
-                        `;
-
+                        : `<select class="select-rol"
+                                onchange="cambiarRol(${u.id}, this.value)"
+                                ${!esRootActual ? 'disabled title="Solo el root puede cambiar roles"' : ''}>
+                               <option value="usuario" ${u.rol === "usuario" ? "selected" : ""}>👤 Gratuito</option>
+                               <option value="basico"  ${u.rol === "basico"  ? "selected" : ""}>⭐ Básico</option>
+                               <option value="pro"     ${u.rol === "pro"     ? "selected" : ""}>💎 Pro</option>
+                               <option value="admin"   ${u.rol === "admin"   ? "selected" : ""}>⚙️ Admin</option>
+                               <option value="root"    ${u.rol === "root"    ? "selected" : ""}>👑 Root</option>
+                           </select>`;
+ 
                     const btnEliminar = esMismoUsuario
                         ? `<button class="btn-eliminar" disabled title="No puedes eliminarte a ti mismo">🔒 Tú</button>`
                         : (esRoot && totalRoots <= 1)
                         ? `<button class="btn-eliminar" disabled title="No se puede eliminar el único root">🔒 Root</button>`
-                        : `<button class="btn-eliminar" onclick="eliminarUsuario(${u.id}, '${u.nombre}')"
-                                   ${!esRootActual ? 'disabled title="Solo el root puede eliminar usuarios"' : ''}>
+                        : `<button class="btn-eliminar"
+                               onclick="eliminarUsuario(${u.id}, '${u.nombre}')"
+                               ${!esRootActual ? 'disabled title="Solo el root puede eliminar"' : ''}>
                                🗑 Eliminar
                            </button>`;
-
+ 
                     return `
                         <tr>
                             <td>${u.id}</td>
@@ -306,7 +312,7 @@ async function cargarUsuariosAdmin() {
         </table>
     `;
 }
-
+ 
 async function eliminarUsuario(id, nombre) {
     mostrarModal(
         "¿Eliminar usuario?",
@@ -323,7 +329,7 @@ async function eliminarUsuario(id, nombre) {
         }
     );
 }
-
+ 
 async function cambiarRol(id, nuevoRol) {
     const res = await fetch(`${API}/admin/usuarios/${id}/rol`, {
         method: "PUT",
@@ -332,13 +338,14 @@ async function cambiarRol(id, nuevoRol) {
     });
     const data = await res.json();
     if (res.ok) {
-        mostrarToast(`Rol actualizado a ${nuevoRol}`);
+        const etiquetas = { usuario: "Gratuito", basico: "Básico", pro: "Pro", admin: "Admin", root: "Root" };
+        mostrarToast(`Plan actualizado a ${etiquetas[nuevoRol] || nuevoRol}`);
     } else {
-        mostrarToast(data.detail || "Error al cambiar rol", "error");
-        cargarUsuariosAdmin(); // recargar para revertir el select
+        mostrarToast(data.detail || "Error al cambiar plan", "error");
+        cargarUsuariosAdmin(); // revertir el select
     }
 }
-
+ 
 async function cargarSelects() {
     const [cats, tiendas] = await Promise.all([
         fetch(`${API}/categorias`).then(r => r.json()),
@@ -349,40 +356,38 @@ async function cargarSelects() {
     const selTienda = document.getElementById("prod-tienda");
     tiendas.forEach(t => selTienda.innerHTML += `<option value="${t.id}">${t.nombre}</option>`);
 }
-
+ 
 function mostrarModal(titulo, mensaje, accion) {
     document.getElementById("modal-titulo").textContent = titulo;
     document.getElementById("modal-mensaje").textContent = mensaje;
-    document.getElementById("modal-confirmar-btn").onclick = () => {
-        cerrarModal();
-        accion();
-    };
+    document.getElementById("modal-confirmar-btn").onclick = () => { cerrarModal(); accion(); };
     document.getElementById("modal-confirmar").style.display = "flex";
 }
-
+ 
 function cerrarModal() {
     document.getElementById("modal-confirmar").style.display = "none";
 }
-
+ 
+actualizarHeader();
 cargarSelects();
 cargarProductosAdmin();
 </script>
-
+ 
 <div id="modal-confirmar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
      background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
     <div style="background:white; padding:30px; border-radius:12px; max-width:400px; width:90%; text-align:center;">
         <h3 id="modal-titulo" style="margin-bottom:10px;">¿Estás seguro?</h3>
         <p id="modal-mensaje" style="color:#64748b; margin-bottom:20px;"></p>
         <div style="display:flex; gap:10px; justify-content:center;">
-            <button onclick="cerrarModal()" 
-                style="padding:10px 20px; border:1px solid #e2e8f0; border-radius:8px; 
+            <button onclick="cerrarModal()"
+                style="padding:10px 20px; border:1px solid #e2e8f0; border-radius:8px;
                        cursor:pointer; background:white;">Cancelar</button>
             <button id="modal-confirmar-btn"
-                style="padding:10px 20px; border:none; border-radius:8px; 
+                style="padding:10px 20px; border:none; border-radius:8px;
                        background:#ef4444; color:white; cursor:pointer;">Eliminar</button>
         </div>
     </div>
 </div>
-
+ 
 </body>
 </html>

@@ -83,15 +83,24 @@ function obtenerUsuarioActual() {
     const token = localStorage.getItem("token");
     if (!token) return null;
     try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return {
-            id: payload.sub,
-            nombre: payload.nombre,
-            email: payload.email,
-            rol: payload.rol
-        };
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+        if (!usuario) return null;
+        return usuario;  // ← lee del objeto, siempre actualizado
     } catch (e) {
         return null;
+    }
+}
+
+
+
+function manejarGratis() {
+    const u = obtenerUsuarioActual();
+    if (!u) {
+        window.location.href = "/registrar.html";
+    } else if (u.rol === "usuario") {
+        mostrarToast("Ya tienes el plan gratuito", "info");
+    } else {
+        solicitarPlan("usuario", document.getElementById("btn-gratis"));
     }
 }
 
@@ -179,7 +188,8 @@ async function cargarProductos(pagina = 1) {
         renderizarPaginacion();
 
     } catch (error) {
-        console.error(error);
+        console.error("Error completo:", error);
+        console.error("Mensaje:", error.message);
         contenedor.innerHTML = "<p>Error al cargar productos</p>";
     }
 }

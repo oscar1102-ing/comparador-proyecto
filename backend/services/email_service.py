@@ -125,3 +125,75 @@ def enviar_codigo(email_destino: str, codigo: str, nombre: str):
         print(f"Error enviando correo: {e}")
         return False
 
+
+# ============================================
+# AGREGAR ESTA FUNCIÓN A TU email_service.py
+# ============================================
+def enviar_factura_plan(email_destino: str, nombre: str, plan: str, pdf_bytes: bytes):
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.application import MIMEApplication
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+ 
+    MAIL_FROM = os.getenv("MAIL_FROM")
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+ 
+    nombres_plan = {"basico": "Plan Básico", "pro": "Plan Pro"}
+    precios_plan = {"basico": "COP $19.900/mes", "pro": "COP $39.900/mes"}
+    nombre_plan = nombres_plan.get(plan, plan)
+    precio_plan = precios_plan.get(plan, "")
+ 
+    mensaje = MIMEMultipart("mixed")
+    mensaje["Subject"] = f"Solicitud de {nombre_plan} activado - PriceCompare"
+    mensaje["From"] = MAIL_FROM
+    mensaje["To"] = email_destino
+ 
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 520px; margin: auto;">
+        <div style="background: #ff6b00; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">PriceCompare</h1>
+        </div>
+        <div style="padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+            <h2>Hola, {nombre} 👋</h2>
+            <p>Tu <strong>{nombre_plan}</strong> ha sido activado exitosamente. 🎉</p>
+ 
+            <div style="background: #fff8f0; border-left: 4px solid #ff6b00;
+                        padding: 16px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+                <p style="margin:0; font-size:15px;">
+                    <strong>Plan solicitado:</strong> {nombre_plan}<br>
+                    <strong>Valor mensual:</strong> {precio_plan}
+                </p>
+            </div>
+ 
+            <p>Adjuntamos el comprobante de pago en PDF.</p>
+            <p>Tu plan ya está activo. Disfruta de todos los beneficios.</p>
+ 
+            <p style="color: #888; font-size: 13px; margin-top: 20px;">
+                Si no fuiste tú quien solicitó este plan, ignora este correo.
+            </p>
+        </div>
+    </body></html>
+    """
+ 
+    parte_html = MIMEText(html, "html")
+    mensaje.attach(parte_html)
+ 
+    # Adjuntar PDF
+    adjunto = MIMEApplication(pdf_bytes, _subtype="pdf")
+    adjunto.add_header("Content-Disposition", "attachment",
+                       filename=f"comprobante_{plan}_pricecompare.pdf")
+    mensaje.attach(adjunto)
+ 
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.sendmail(MAIL_FROM, email_destino, mensaje.as_string())
+        return True
+    except Exception as e:
+        print(f"Error enviando factura: {e}")
+        return False
+
