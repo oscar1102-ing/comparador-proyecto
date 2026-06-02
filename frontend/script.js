@@ -315,18 +315,15 @@ function cerrarSesion() {
     window.location.href = "/index.html";
 }
 
-// ── FAVORITOS ──
+// ── FAVORITOS (actualizado con límite) ──
 async function agregarFavorito(productoId, nombreProducto, botonId) {
     const boton = document.getElementById(botonId);
     if (!boton || boton.disabled) return;
     boton.disabled = true;
-
-    const usuario = obtenerUsuarioActual();  // Tu función que obtiene el usuario desde el token
-    if (!usuario) {
-        window.location.href = "/login.html";
-        return;
-    }
-
+ 
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) { window.location.href = "/login.html"; return; }
+ 
     try {
         const res = await fetch("/api/favoritos/toggle", {
             method: "POST",
@@ -334,36 +331,34 @@ async function agregarFavorito(productoId, nombreProducto, botonId) {
             body: JSON.stringify({ usuario_id: usuario.id, producto_id: productoId })
         });
         const data = await res.json();
-
-        // Aplicar estilos según la acción
+ 
+        if (data.limite_alcanzado) {
+            mostrarModalLimite("favoritos", data.limite);
+            boton.disabled = false;
+            return;
+        }
+ 
         if (data.accion === "agregado") {
             boton.textContent = "⭐ Guardado";
-            boton.style.background = "#22c55e";   // verde
+            boton.style.background = "#22c55e";
         } else {
             boton.textContent = "⭐ Favorito";
-            boton.style.background = "#ff6b00";   // naranja
+            boton.style.background = "#ff6b00";
         }
-        // Forzar color de texto blanco y otros estilos básicos
         boton.style.color = "white";
-        boton.style.border = "none";
-        boton.style.padding = "6px 12px";
-        boton.style.borderRadius = "4px";
-        boton.style.cursor = "pointer";
-        boton.style.fontSize = "14px";
-
-        // Animación de escala
         boton.style.transform = "scale(1.4)";
         boton.style.transition = "transform 0.2s ease";
         setTimeout(() => { boton.style.transform = "scale(1)"; }, 200);
-
-        mostrarToast(data.accion === "agregado" ? "Agregado a favoritos" : "Eliminado de favoritos", data.accion === "agregado" ? "success" : "info");
+        mostrarToast(data.accion === "agregado" ? "Agregado a favoritos" : "Eliminado de favoritos",
+                     data.accion === "agregado" ? "success" : "info");
         boton.disabled = false;
-
+ 
     } catch (err) {
         boton.disabled = false;
         mostrarToast("Error de conexión", "error");
     }
 }
+
 
 // ── TOAST ──
 function mostrarToast(mensaje, tipo = "success") {
@@ -400,3 +395,176 @@ function mostrarToast(mensaje, tipo = "success") {
 }
 
 
+// ── COMPARACION (nuevo) ──
+let dataTiendasGlobal = [];
+ 
+async function inicializarComparacion(tiendas) {
+    dataTiendasGlobal = tiendas;
+    const usuario = obtenerUsuarioActual();
+ 
+    // Sin cuenta — mostrar bloqueo
+    if (!usuario) {
+        document.getElementById("comparacion-sin-cuenta").style.display = "block";
+        document.getElementById("comparacion-btn-container").style.display = "none";
+        document.getElementById("tiendas").style.display = "none";
+        return;
+    }
+ 
+    // Con cuenta — mostrar botón y contador
+    document.getElementById("comparacion-sin-cuenta").style.display = "none";
+    document.getElementById("comparacion-btn-container").style.display = "block";
+    document.getElementById("tiendas").style.display = "none";
+ 
+    // Mostrar cuántas comparaciones le quedan
+    try {
+        const res = await fetch(`/api/plan/${usuario.id}`);
+        const plan = await res.json();
+        const restantes = document.getElementById("comparacion-restantes");
+        if (plan.comparaciones_limite === null) {
+            restantes.textContent = "Comparaciones ilimitadas ✨";
+        } else {
+            const quedan = plan.comparaciones_limite - plan.comparaciones_usadas;
+            restantes.textContent = `Te quedan ${quedan} de ${plan.comparaciones_limite} comparaciones este mes`;
+            if (quedan <= 0) {
+                const btn = document.getElementById("btn-ver-comparacion");
+                btn.disabled = false;
+                btn.style.background = "#7c3aed";
+                btn.textContent = "🚀 Mejorar plan para ver más";
+                btn.onclick = () => mostrarModalLimite("comparaciones", plan.comparaciones_limite);
+            }
+        }
+    } catch (_) {}
+}
+
+async function verComparacion() {
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) { window.location.href = "/login.html"; return; }
+ 
+    const btn = document.getElementById("btn-ver-comparacion");
+    btn.disabled = true;
+    btn.textContent = "Verificando...";
+ 
+    try {
+        const res = await fetch("/api/comparaciones/verificar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario_id: parseInt(usuario.id) })
+        });
+        const data = await res.json();
+ 
+        if (!data.permitido) {
+            mostrarModalLimite("comparaciones", data.limite);
+            btn.disabled = false;
+            btn.textContent = "📊 Ver comparación de precios";
+            return;
+        }
+ 
+        // Mostrar comparación
+        document.getElementById("comparacion-btn-container").style.display = "none";
+        const tiendasDiv = document.getElementById("tiendas");
+        tiendasDiv.style.display = "block";
+        tiendasDiv.innerHTML = "";
+ 
+        const tiendas = dataTiendasGlobal;
+        const precioMin = tiendas[0].precio;
+        const precioMax = tiendas[tiendas.length - 1].precio;
+ 
+        tiendas.forEach((t, i) => {
+            const esMasBarato = i === 0;
+            const porcentajeBarra = ((t.precio - precioMin) / (precioMax - precioMin || 1)) * 45 + 55;
+            const colorBarra = i === 0 ? '#16a34a' : i === tiendas.length - 1 ? '#ef4444' : '#f59e0b';
+ 
+            tiendasDiv.innerHTML += `
+                <div class="tienda-fila">
+                    <div class="tienda-logo-box ${getLogoClass(t.tienda)}">${getLogoLetras(t.tienda)}</div>
+                    <div class="tienda-datos">
+                        <div class="tienda-nombre-fila">
+                            ${t.tienda}
+                            ${esMasBarato ? '<span class="tag-barato">✓ Más barato</span>' : ''}
+                        </div>
+                        <div class="tienda-entrega">Disponible online</div>
+                        <div class="barra-comparacion" style="width:${porcentajeBarra}%;background:${colorBarra}"></div>
+                    </div>
+                    <div class="tienda-precio-fila ${esMasBarato ? 'precio-verde' : ''}">${formatearPrecio(t.precio)}</div>
+                    ${t.url ? `<a href="${t.url}" target="_blank" class="btn-ir-tienda">Ver →</a>` : ''}
+                </div>
+            `;
+        });
+ 
+        // Actualizar contador
+        if (data.limite !== null) {
+            mostrarToast(`Comparación usada. Te quedan ${data.restantes} este mes.`, "info");
+        }
+ 
+    } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "📊 Ver comparación de precios";
+        mostrarToast("Error de conexión", "error");
+    }
+}
+ 
+// ── MAPA (restricción visitantes) ──
+
+function inicializarMapa(tiendas) {
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) {
+        document.getElementById("mapa-sin-cuenta").style.display = "block";
+        document.getElementById("mapa-con-cuenta").style.display = "none";
+        return;
+    }
+    document.getElementById("mapa-sin-cuenta").style.display = "none";
+    document.getElementById("mapa-con-cuenta").style.display = "block";
+    if (tiendas.length > 0) cargarMapaTiendas(tiendas);
+}
+
+ 
+// ── MODAL DE LÍMITE ──
+function mostrarModalLimite(tipo, limite) {
+    const anterior = document.getElementById("modal-limite");
+    if (anterior) anterior.remove();
+ 
+    const textos = {
+        favoritos: {
+            titulo: `Límite de ${limite} favoritos alcanzado`,
+            desc: "Mejora tu plan para guardar más productos favoritos.",
+        },
+        comparaciones: {
+            titulo: `Límite de ${limite} comparaciones mensuales alcanzado`,
+            desc: "Mejora tu plan para ver más comparaciones este mes.",
+        }
+    };
+ 
+    const { titulo, desc } = textos[tipo] || textos.favoritos;
+ 
+    const modal = document.createElement("div");
+    modal.id = "modal-limite";
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999; padding: 20px;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; border-radius:16px; padding:32px; max-width:400px;
+                    width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <div style="font-size:48px; margin-bottom:12px;">🚀</div>
+            <h3 style="margin:0 0 8px; font-size:18px; color:#1a1a1a;">${titulo}</h3>
+            <p style="color:#888; font-size:14px; margin:0 0 24px;">${desc}</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <a href="planes.html"
+                   style="background:#ff6b00; color:white; padding:12px; border-radius:10px;
+                          text-decoration:none; font-size:15px; font-weight:600;">
+                    ⭐ Ver planes
+                </a>
+                <button onclick="document.getElementById('modal-limite').remove()"
+                    style="background:#f1f5f9; color:#64748b; border:none; padding:12px;
+                           border-radius:10px; cursor:pointer; font-size:14px;">
+                    Ahora no
+                </button>
+            </div>
+        </div>
+    `;
+    modal.addEventListener("click", e => {
+        if (e.target === modal) modal.remove();
+    });
+    document.body.appendChild(modal);
+}

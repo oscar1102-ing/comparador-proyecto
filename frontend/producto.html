@@ -127,29 +127,70 @@
             <!-- COMPARACION TIENDAS -->
             <div class="seccion-card">
                 <div class="seccion-titulo">📊 Comparación de precios por tienda</div>
-                <div id="tiendas">
+             
+                <!-- Estado: sin cuenta -->
+                <div id="comparacion-sin-cuenta" style="display:none; text-align:center; padding:24px;">
+                    <div style="font-size:40px; margin-bottom:12px;">🔒</div>
+                    <p style="font-weight:600; color:#1a1a1a; margin:0 0 6px;">Inicia sesión para ver la comparación</p>
+                    <p style="color:#888; font-size:13px; margin:0 0 16px;">Compara precios entre tiendas y encuentra el mejor precio</p>
+                    <a href="login.html" style="background:#ff6b00; color:white; padding:10px 22px;
+                       border-radius:8px; text-decoration:none; font-size:14px; font-weight:600;">
+                        Iniciar sesión
+                    </a>
+                </div>
+             
+                <!-- Estado: botón para ver comparación -->
+                <div id="comparacion-btn-container" style="display:none; text-align:center; padding:16px 0;">
+                    <button id="btn-ver-comparacion" onclick="verComparacion()"
+                        style="background:#ff6b00; color:white; border:none; padding:12px 28px;
+                               border-radius:10px; font-size:15px; font-weight:600; cursor:pointer;
+                               display:inline-flex; align-items:center; gap:8px;">
+                        📊 Ver comparación de precios
+                    </button>
+                    <p id="comparacion-restantes" style="color:#888; font-size:12px; margin:8px 0 0;"></p>
+                </div>
+             
+                <!-- Estado: comparación visible -->
+                <div id="tiendas" style="display:none;">
                     <p style="color:#888; font-size:14px;">Cargando precios...</p>
                 </div>
             </div>
 
+
             <!-- MAPA -->
             <div class="seccion-card">
                 <div class="seccion-titulo">📍 ¿Dónde comprar en Bogotá?</div>
-                <div id="mapa-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
-                <div id="mapa-leaflet" style="height:320px; border-radius:12px; overflow:hidden; border:1px solid #e8e8e8;"></div>
-                <div id="mapa-sin-sedes" style="display:none; background:#f9f9f9; border-radius:12px;
-                     padding:32px; text-align:center; border:1.5px dashed #e0e0e0;">
-                    <div style="font-size:36px; margin-bottom:8px;">🌐</div>
-                    <p style="font-weight:600; color:#444; margin:0 0 6px;">Esta tienda no tiene sedes físicas</p>
-                    <p style="color:#888; font-size:13px; margin:0 0 16px;">Solo disponible en línea</p>
-                    <a id="mapa-link-tienda" href="#" target="_blank"
-                       style="background:#ff6b00; color:white; padding:10px 20px; border-radius:8px;
-                              text-decoration:none; font-size:14px; font-weight:600;">
-                        Ir a la tienda →
+             
+                <!-- Sin cuenta -->
+                <div id="mapa-sin-cuenta" style="display:none; text-align:center; padding:24px;">
+                    <div style="font-size:40px; margin-bottom:12px;">🗺️</div>
+                    <p style="font-weight:600; color:#1a1a1a; margin:0 0 6px;">Inicia sesión para ver el mapa</p>
+                    <p style="color:#888; font-size:13px; margin:0 0 16px;">Encuentra las tiendas físicas más cercanas</p>
+                    <a href="login.html" style="background:#ff6b00; color:white; padding:10px 22px;
+                       border-radius:8px; text-decoration:none; font-size:14px; font-weight:600;">
+                        Iniciar sesión
                     </a>
                 </div>
-                <div id="lista-sedes" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
+             
+                <!-- Con cuenta -->
+                <div id="mapa-con-cuenta">
+                    <div id="mapa-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+                    <div id="mapa-leaflet" style="height:320px; border-radius:12px; overflow:hidden; border:1px solid #e8e8e8;"></div>
+                    <div id="mapa-sin-sedes" style="display:none; background:#f9f9f9; border-radius:12px;
+                         padding:32px; text-align:center; border:1.5px dashed #e0e0e0;">
+                        <div style="font-size:36px; margin-bottom:8px;">🌐</div>
+                        <p style="font-weight:600; color:#444; margin:0 0 6px;">Esta tienda no tiene sedes físicas</p>h
+                        <p style="color:#888; font-size:13px; margin:0 0 16px;">Solo disponible en línea</p>
+                        <a id="mapa-link-tienda" href="#" target="_blank"
+                           style="background:#ff6b00; color:white; padding:10px 20px; border-radius:8px;
+                                  text-decoration:none; font-size:14px; font-weight:600;">
+                            Ir a la tienda →
+                        </a>
+                    </div>
+                    <div id="lista-sedes" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
             </div>
+
 
             <!-- SIMILARES -->
             <div class="seccion-card">
@@ -215,7 +256,8 @@
                 document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
 
                 const tiendas = data.tiendas || [];
-                if (tiendas.length > 0) cargarMapaTiendas(tiendas);
+                inicializarComparacion(tiendas);
+                inicializarMapa(tiendas);
 
                 if (tiendas.length > 0) {
                     const precioMin = tiendas[0].precio;
@@ -320,7 +362,7 @@
     }
 
     // Inicializar mapa Leaflet
-    function inicializarMapa() {
+    function inicializarLeaflet() {
         if (mapaLeaflet) return;
         mapaLeaflet = L.map('mapa-leaflet').setView([4.65, -74.08], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -331,7 +373,7 @@
 
     // Mostrar sedes de una tienda en el mapa
     function mostrarSedesEnMapa(tienda, sedes) {
-        if (!mapaLeaflet) inicializarMapa();
+        if (!mapaLeaflet) inicializarLeaflet();
 
         // Limpiar marcadores anteriores
         mapaLeaflet.eachLayer(layer => {
@@ -484,7 +526,7 @@
 
             // Activar automáticamente la tienda más barata
             if (tiendas.length > 0) {
-                inicializarMapa();
+                inicializarLeaflet();
                 activarTabTienda(tiendas[0].tienda);
             }
 
