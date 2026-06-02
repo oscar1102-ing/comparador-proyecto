@@ -184,6 +184,11 @@ if __name__ == "__main__":
             "nombre": "Mercado Libre",
             "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mercado_Libre_logo.svg/512px-Mercado_Libre_logo.svg.png",
             "sitio_web": "https://www.mercadolibre.com.co/"
+        },
+        {
+            "nombre": "Alkosto",
+            "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Alkosto_logo.svg/512px-Alkosto_logo.svg.png",
+            "sitio_web": "https://www.alkosto.com/"
         }
     ]
  

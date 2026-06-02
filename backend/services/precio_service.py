@@ -30,17 +30,17 @@ def obtener_top_productos():
 
 
 def obtener_detalle_producto(nombre: str):
-
     producto = producto_repository.obtener_producto(nombre)
-    tiendas = tienda_repository.obtener_tiendas_producto(nombre)
+    if not producto:
+        return {"producto": None, "tiendas": [], "similares": []}
+    # Usar ID para buscar por similitud en vez de nombre exacto
+    tiendas = tienda_repository.obtener_tiendas_por_id(producto["id"])
     similares = producto_repository.obtener_similares(nombre)
-
     return {
         "producto": producto,
         "tiendas": tiendas,
         "similares": similares
     }
-
 
 
 

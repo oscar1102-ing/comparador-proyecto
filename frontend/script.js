@@ -247,55 +247,90 @@ async function cargarTop() {
 // ── DETALLE PRODUCTO ──
 async function cargarDetalle() {
     const params = new URLSearchParams(window.location.search);
-    const nombre = params.get("nombre");
+    let nombre = params.get("nombre");
+
+    // 🔥 Si el nombre es un objeto (ej: [object HTMLHeadingElement])
+    if (nombre && typeof nombre === 'object') {
+        nombre = nombre.textContent || nombre.innerText || '';
+    }
+    // Si es un string que parece un objeto serializado
+    if (typeof nombre === 'string' && (nombre.startsWith('[object') || nombre === 'null')) {
+        console.error('Nombre inválido:', nombre);
+        document.getElementById("nombre").innerText = "Producto no válido";
+        document.getElementById("precio-principal").innerText = "$0";
+        document.getElementById("tiendas").innerHTML = "<p>Error en el enlace.</p>";
+        document.getElementById("similares").innerHTML = "<p>No se pudo cargar.</p>";
+        return;
+    }
     if (!nombre) return;
 
-    const res = await fetch(`/api/producto?nombre=${nombre}`);
-    const data = await res.json();
+    try {
+        const res = await fetch(`/api/producto?nombre=${encodeURIComponent(nombre)}`);
+        const data = await res.json();
 
-    document.getElementById("nombre").innerText = data.producto.nombre;
-    document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
+        if (!data || !data.producto) {
+            console.error('Producto no encontrado:', nombre);
+            document.getElementById("nombre").innerText = "Producto no encontrado";
+            document.getElementById("precio-principal").innerText = "$0";
+            document.getElementById("tiendas").innerHTML = "<p>No hay información disponible.</p>";
+            document.getElementById("similares").innerHTML = "<p>No se encontraron similares.</p>";
+            return;
+        }
 
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-    const contenedorInfo = document.querySelector(".info-producto");
-    if (usuario && contenedorInfo && data.producto.id) {
-        contenedorInfo.innerHTML += `
-            <button id="fav-detalle"
-                onclick="agregarFavorito(${data.producto.id}, '${data.producto.nombre}', 'fav-detalle')"
-                style="background:#ff6b00; color:white; border:none; padding:10px 20px;
-                       border-radius:6px; cursor:pointer; margin-top:12px; font-size:15px;">
-                ⭐ Favorito
-            </button>
-        `;
+        // ✅ Resto del código original (mostrar producto, tiendas, similares, etc.)
+        document.getElementById("nombre").innerText = data.producto.nombre;
+        document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
+
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+        const contenedorInfo = document.querySelector(".info-producto");
+        if (usuario && contenedorInfo && data.producto.id) {
+            contenedorInfo.innerHTML += `
+                <button id="fav-detalle"
+                    onclick="agregarFavorito(${data.producto.id}, '${data.producto.nombre}', 'fav-detalle')"
+                    style="background:#ff6b00; color:white; border:none; padding:10px 20px;
+                           border-radius:6px; cursor:pointer; margin-top:12px; font-size:15px;">
+                    ⭐ Favorito
+                </button>
+            `;
+        }
+
+        const tiendasDiv = document.getElementById("tiendas");
+        tiendasDiv.innerHTML = "";
+        data.tiendas.forEach(t => {
+            tiendasDiv.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; 
+                            padding:10px; border-bottom:1px solid #eee;">
+                    <span>${t.tienda}</span>
+                    <span class="precio">${formatearPrecio(t.precio)}</span>
+                    ${t.url ? `<a href="${t.url}" target="_blank" 
+                        style="background:#ff7a00; color:white; padding:8px 14px; 
+                        border-radius:5px; text-decoration:none; font-size:14px;">
+                        Comprar →</a>` : ''}
+                </div>
+            `;
+        });
+
+        const similaresDiv = document.getElementById("similares");
+        similaresDiv.innerHTML = "";
+        data.similares.forEach(s => {
+            // Protección adicional: si s.nombre es objeto, extraer texto
+            let nombreSimilar = s.nombre;
+            if (nombreSimilar && typeof nombreSimilar === 'object') {
+                nombreSimilar = nombreSimilar.textContent || nombreSimilar.innerText || '';
+            }
+            similaresDiv.innerHTML += `
+                <div>
+                    <h4>${nombreSimilar}</h4>
+                    <p>${formatearPrecio(s.precio)}</p>
+                    <a href="producto.html?nombre=${encodeURIComponent(nombreSimilar)}">Ver</a>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        console.error("Error cargando detalle:", err);
+        document.getElementById("nombre").innerText = "Error al cargar";
     }
-
-    const tiendasDiv = document.getElementById("tiendas");
-    tiendasDiv.innerHTML = "";
-    data.tiendas.forEach(t => {
-        tiendasDiv.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; 
-                        padding:10px; border-bottom:1px solid #eee;">
-                <span>${t.tienda}</span>
-                <span class="precio">${formatearPrecio(t.precio)}</span>
-                ${t.url ? `<a href="${t.url}" target="_blank" 
-                    style="background:#ff7a00; color:white; padding:8px 14px; 
-                    border-radius:5px; text-decoration:none; font-size:14px;">
-                    Comprar →</a>` : ''}
-            </div>
-        `;
-    });
-
-    const similaresDiv = document.getElementById("similares");
-    similaresDiv.innerHTML = "";
-    data.similares.forEach(s => {
-        similaresDiv.innerHTML += `
-            <div>
-                <h4>${s.nombre}</h4>
-                <p>${formatearPrecio(s.precio)}</p>
-                <a href="producto.html?nombre=${s.nombre}">Ver</a>
-            </div>
-        `;
-    });
 }
 
 // ── HEADER ──
