@@ -13,6 +13,7 @@ from models.mfa_model import VerificarMFA
 from database import conectar_base
 import repositories.usuario_repository as usuario_repo
 import repositories.sede_repository as sede_repo
+import services.plan_service as plan_service
 
 router = APIRouter()
 
@@ -193,3 +194,20 @@ def obtener_sedes_multiples(datos: dict):
     if not tiendas:
         return []
     return sede_repo.obtener_sedes_por_tiendas(tiendas)
+    
+@router.post("/comparaciones/verificar")
+def verificar_comparacion(datos: dict):
+    usuario_id = datos.get("usuario_id")
+    if not usuario_id:
+        raise HTTPException(status_code=400, detail="Falta usuario_id")
+    resultado = plan_service.verificar_comparacion(usuario_id)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+ 
+@router.get("/plan/{usuario_id}")
+def obtener_plan(usuario_id: int):
+    resultado = plan_service.obtener_info_plan(usuario_id)
+    if "error" in resultado:
+        raise HTTPException(status_code=404, detail=resultado["error"])
+    return resultado
