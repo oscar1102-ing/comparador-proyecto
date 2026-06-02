@@ -1,10 +1,80 @@
+Favoritos · HTML
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mis Favoritos</title>
+    <title>Mis Favoritos - PriceCompare</title>
     <link rel="icon" href="imagenes/logo1.png">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .favoritos-wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+ 
+        .favoritos-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+        }
+        .favoritos-header h2 { margin: 0; font-size: 22px; }
+ 
+        .plan-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #fff3ea; color: #cc4e00; font-size: 13px;
+            font-weight: 500; padding: 5px 14px; border-radius: 20px;
+            margin-bottom: 18px;
+        }
+        .plan-badge.lleno { background: #fee2e2; color: #e74c3c; }
+ 
+        .favoritos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+ 
+        .fav-card {
+            background: white; border-radius: 14px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column;
+        }
+        .fav-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+ 
+        .fav-img-box {
+            background: #f9f9f9; padding: 20px;
+            display: flex; align-items: center; justify-content: center;
+            height: 150px;
+        }
+        .fav-img-box img { width: 110px; height: 110px; object-fit: contain; }
+ 
+        .fav-info { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .fav-nombre {
+            font-size: 14px; font-weight: 500; color: #1a1a1a; line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .fav-precio { font-size: 17px; font-weight: 700; color: #ff6b00; }
+ 
+        .fav-btns { display: flex; gap: 8px; margin-top: auto; padding-top: 10px; }
+        .btn-ver-fav {
+            flex: 1; background: #ff6b00; color: white; border: none;
+            padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            cursor: pointer; text-decoration: none; text-align: center;
+        }
+        .btn-ver-fav:hover { background: #e96d00; }
+        .btn-quitar-fav {
+            background: #fee2e2; color: #e74c3c; border: none;
+            padding: 8px 12px; border-radius: 8px; font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-quitar-fav:hover { background: #fecaca; }
+ 
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #94a3b8;
+        }
+        .empty-state div { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 15px; margin: 0 0 16px; }
+ 
+        @media (max-width: 500px) {
+            .favoritos-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
 </head>
 <body>
 <header>
@@ -17,75 +87,144 @@
     </form>
     <div class="auth-buttons"></div>
 </header>
-
+ 
 <main>
-    <section style="padding: 20px;">
-        <h2>⭐ Mis Favoritos</h2>
-        <div id="lista-favoritos" class="lista-productos">
-            <p>Cargando...</p>
+    <div class="favoritos-wrap">
+        <div class="favoritos-header">
+            <h2>⭐ Mis Favoritos</h2>
         </div>
-    </section>
+ 
+        <div id="plan-info"></div>
+        <div id="lista-favoritos" class="favoritos-grid">
+            <p style="color:#888;">Cargando...</p>
+        </div>
+    </div>
 </main>
-
-<footer>
-    <p>© 2026 PriceCompare</p>
-</footer>
-
+ 
+<footer><p>© 2026 PriceCompare</p></footer>
+ 
 <script src="script.js"></script>
 <script>
 const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-
-if (!usuario) {
-    window.location.href = "/login.html";
-}
-
+if (!usuario) window.location.href = "/login.html";
+ 
 async function cargarFavoritos() {
     const contenedor = document.getElementById("lista-favoritos");
+    const planInfo = document.getElementById("plan-info");
+ 
+    // Mostrar info del plan
+    try {
+        const resPlan = await fetch(`/api/plan/${usuario.id}`);
+        const plan = await resPlan.json();
+        const limite = plan.favoritos_limite;
+        const usados = plan.favoritos_usados;
+        const lleno = limite !== null && usados >= limite;
+ 
+        planInfo.innerHTML = `
+            <div class="plan-badge ${lleno ? 'lleno' : ''}">
+                ⭐ Plan ${plan.rol} — 
+                ${limite === null
+                    ? "Favoritos ilimitados ✨"
+                    : lleno
+                        ? `Límite alcanzado: ${usados}/${limite} favoritos`
+                        : `${usados} de ${limite} favoritos usados`}
+                ${lleno ? ' · <a href="planes.html" style="color:#e74c3c; font-weight:700;">Mejorar plan</a>' : ''}
+            </div>
+        `;
+    } catch(_) {}
+ 
+    // Cargar favoritos
     try {
         const res = await fetch(`/api/favoritos/${usuario.id}`);
         const data = await res.json();
-
+ 
         if (data.length === 0) {
-            contenedor.innerHTML = "<p>No tienes productos favoritos aún.</p>";
+            contenedor.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1;">
+                    <div>⭐</div>
+                    <p>No tienes productos favoritos aún.</p>
+                    <a href="busquedaProducto.html"
+                        style="background:#ff6b00; color:white; padding:10px 22px;
+                               border-radius:8px; text-decoration:none; font-size:14px; font-weight:600;">
+                        Explorar productos
+                    </a>
+                </div>`;
             return;
         }
-
+ 
         contenedor.innerHTML = "";
         data.forEach(fav => {
-            contenedor.innerHTML += `
-                <article class="producto-busqueda">
-                    <img src="${fav.imagen || 'imagenes/logo1.png'}" alt="${fav.nombre}">
-                    <div class="info-producto-busqueda">
-                        <h3>${fav.nombre}</h3>
-                        <p class="precio">${fav.precio_minimo ? '$' + fav.precio_minimo : 'Sin precio'}</p>
-                        <a href="producto.html?nombre=${fav.nombre}">Ver producto</a>
-                        <button onclick="eliminarFavorito(${fav.favorito_id}, this)" 
-                            style="margin-top:8px; background:#e74c3c; color:white; border:none; 
-                                   padding:6px 12px; border-radius:4px; cursor:pointer;">
-                            🗑 Quitar
-                        </button>
+            const precio = fav.precio
+                ? fav.precio.toLocaleString('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 })
+                : "Sin precio";
+ 
+            const card = document.createElement("div");
+            card.className = "fav-card";
+            card.id = `fav-${fav.favorito_id}`;
+            card.innerHTML = `
+                <div class="fav-img-box">
+                    <img src="${(fav.imagen && fav.imagen !== 'null') ? fav.imagen : 'imagenes/logo1.png'}"
+                         alt="${fav.nombre}">
+                </div>
+                <div class="fav-info">
+                    <div class="fav-nombre">${fav.nombre}</div>
+                    <div class="fav-precio">${precio}</div>
+                    <div class="fav-btns">
+                        <a href="producto.html?nombre=${encodeURIComponent(fav.nombre)}"
+                            class="btn-ver-fav">Ver producto</a>
+                        <button class="btn-quitar-fav" title="Quitar de favoritos"
+                            onclick="eliminarFavorito(${fav.favorito_id}, this)">🗑</button>
                     </div>
-                </article>
+                </div>
             `;
+            contenedor.appendChild(card);
         });
-    } catch (err) {
-        contenedor.innerHTML = "<p>Error al cargar favoritos.</p>";
+ 
+    } catch(err) {
+        contenedor.innerHTML = "<p style='color:#e74c3c;'>Error al cargar favoritos.</p>";
     }
 }
-
+ 
 async function eliminarFavorito(favoritoId, btn) {
+    btn.disabled = true;
     try {
         const res = await fetch(`/api/favoritos/${favoritoId}?usuario_id=${usuario.id}`, {
             method: "DELETE"
         });
         if (res.ok) {
-            btn.closest("article").remove();
+            const card = document.getElementById(`fav-${favoritoId}`);
+            if (card) card.remove();
+            mostrarToast("Eliminado de favoritos", "info");
+ 
+            // Si quedó vacío
+            const contenedor = document.getElementById("lista-favoritos");
+            if (contenedor.children.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <div>⭐</div>
+                        <p>No tienes productos favoritos aún.</p>
+                        <a href="busquedaProducto.html"
+                            style="background:#ff6b00; color:white; padding:10px 22px;
+                                   border-radius:8px; text-decoration:none;
+                                   font-size:14px; font-weight:600;">
+                            Explorar productos
+                        </a>
+                    </div>`;
+            }
+ 
+            // Actualizar badge del plan
+            cargarFavoritos(); // Re-carga para actualizar contador
+        } else {
+            btn.disabled = false;
+            mostrarToast("Error al eliminar", "error");
         }
-    } catch (err) {
-        alert("Error al eliminar");
+    } catch(err) {
+        btn.disabled = false;
+        mostrarToast("Error de conexión", "error");
     }
 }
-
+ 
+actualizarHeader();
 cargarFavoritos();
 </script>
 </body>

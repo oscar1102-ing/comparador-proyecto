@@ -211,3 +211,10 @@ def obtener_plan(usuario_id: int):
     if "error" in resultado:
         raise HTTPException(status_code=404, detail=resultado["error"])
     return resultado
+    
+@router.delete("/historial/entrada/{historial_id}")
+def eliminar_entrada_historial(historial_id: int, usuario_id: int):
+    resultado = historial_service.eliminar_entrada(historial_id, usuario_id)
+    if "error" in resultado:
+        raise HTTPException(status_code=404, detail=resultado["error"])
+    return resultado
