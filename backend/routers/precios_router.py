@@ -251,3 +251,96 @@ def obtener_usuario_por_id(usuario_id: int):
         "email": fila[2],
         "rol": fila[3]
     }
+    
+@router.get("/admin/estadisticas")
+def obtener_estadisticas():
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Usuarios por plan
+        cursor.execute("""
+            SELECT rol, COUNT(*) 
+            FROM usuarios 
+            GROUP BY rol 
+            ORDER BY COUNT(*) DESC
+        """)
+        usuarios_por_plan = [{"plan": r[0], "total": r[1]} for r in cursor.fetchall()]
+
+        # Comparaciones totales por plan
+        cursor.execute("""
+            SELECT rol, SUM(comparaciones_mes) as total_comparaciones
+            FROM usuarios
+            GROUP BY rol
+            ORDER BY total_comparaciones DESC
+        """)
+        comparaciones_por_plan = [{"plan": r[0], "total": int(r[1] or 0)} for r in cursor.fetchall()]
+
+        # Top usuarios por comparaciones
+        cursor.execute("""
+            SELECT nombre, rol, comparaciones_mes
+            FROM usuarios
+            ORDER BY comparaciones_mes DESC
+            LIMIT 5
+        """)
+        top_usuarios = [{"nombre": r[0], "plan": r[1], "comparaciones": r[2]} for r in cursor.fetchall()]
+
+        # Total comparaciones hoy
+        cursor.execute("SELECT SUM(comparaciones_mes) FROM usuarios")
+        total_comparaciones = int(cursor.fetchone()[0] or 0)
+
+        return {
+            "usuarios_por_plan": usuarios_por_plan,
+            "comparaciones_por_plan": comparaciones_por_plan,
+            "top_usuarios": top_usuarios,
+            "total_comparaciones": total_comparaciones,
+            "total_usuarios": sum(p["total"] for p in usuarios_por_plan)
+        }
+    finally:
+        cursor.close()
+        conexion.close()
+        
+@router.get("/admin/estadisticas/tiempo")
+def estadisticas_tiempo():
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Comparaciones por día (últimos 30 días)
+        cursor.execute("""
+            SELECT DATE(fecha) as dia, COUNT(*) as total, plan
+            FROM historial_comparaciones
+            WHERE fecha >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(fecha), plan
+            ORDER BY dia ASC
+        """)
+        por_dia = [{"dia": str(r[0]), "total": r[1], "plan": r[2]} for r in cursor.fetchall()]
+
+        # Comparaciones por mes (últimos 6 meses)
+        cursor.execute("""
+            SELECT TO_CHAR(fecha, 'YYYY-MM') as mes, COUNT(*) as total, plan
+            FROM historial_comparaciones
+            WHERE fecha >= NOW() - INTERVAL '6 months'
+            GROUP BY TO_CHAR(fecha, 'YYYY-MM'), plan
+            ORDER BY mes ASC
+        """)
+        por_mes = [{"mes": r[0], "total": r[1], "plan": r[2]} for r in cursor.fetchall()]
+
+        # Nuevos usuarios por día (últimos 30 días)
+        cursor.execute("""
+            SELECT DATE(fecha_registro) as dia, rol, COUNT(*) as total
+            FROM usuarios
+            WHERE fecha_registro >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(fecha_registro), rol
+            ORDER BY dia ASC
+        """)
+        usuarios_por_dia = [{"dia": str(r[0]), "plan": r[1], "total": r[2]} for r in cursor.fetchall()]
+
+        return {
+            "comparaciones_por_dia": por_dia,
+            "comparaciones_por_mes": por_mes,
+            "usuarios_por_dia": usuarios_por_dia
+        }
+    finally:
+        cursor.close()
+        conexion.close()

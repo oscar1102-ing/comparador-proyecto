@@ -77,9 +77,12 @@ def verificar_comparacion(usuario_id: int):
             cursor.execute("""
                 UPDATE usuarios SET comparaciones_mes = comparaciones_mes + 1 WHERE id = %s
             """, (usuario_id,))
+            cursor.execute("""
+                INSERT INTO historial_comparaciones (usuario_id, plan) VALUES (%s, %s)
+            """, (usuario_id, rol))
             conexion.commit()
             return {"permitido": True, "usadas": comparaciones_mes + 1, "limite": None}
- 
+
         # Si llegó al límite
         if comparaciones_mes >= limite:
             return {
@@ -93,6 +96,9 @@ def verificar_comparacion(usuario_id: int):
         cursor.execute("""
             UPDATE usuarios SET comparaciones_mes = comparaciones_mes + 1 WHERE id = %s
         """, (usuario_id,))
+        cursor.execute("""
+            INSERT INTO historial_comparaciones (usuario_id, plan) VALUES (%s, %s)
+        """, (usuario_id, rol))
         conexion.commit()
  
         return {
