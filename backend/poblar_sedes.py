@@ -181,6 +181,11 @@ if __name__ == "__main__":
             "sitio_web": "https://www.falabella.com.co/"
         },
         {
+            "nombre": "Linio",
+            "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Linio_logo.svg/512px-Linio_logo.svg.png",
+            "sitio_web": "https://www.linio.com.co/"
+        },
+        {
             "nombre": "Mercado Libre",
             "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mercado_Libre_logo.svg/512px-Mercado_Libre_logo.svg.png",
             "sitio_web": "https://www.mercadolibre.com.co/"

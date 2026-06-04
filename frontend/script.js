@@ -175,7 +175,8 @@ async function cargarProductos(pagina = 1) {
                         <h3>${prod.nombre}</h3>
                         <p class="precio">${formatearPrecio(prod.precio)}</p>
                         <p>${prod.tienda}</p>
-                        <a href="producto.html?nombre=${prod.nombre}">Ver producto</a>
+                        
+                        <a href="producto.html?nombre=${encodeURIComponent(prod.nombre)}">Ver producto</a>
                         ${botonFavorito}
                     </div>
                 </article>
@@ -338,8 +339,8 @@ function actualizarHeader() {
     if (usuario) {
         const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
-            <a href="planes.html" class="btn-auth btn-planes">💎 Planes</a>
             <span class="btn-auth btn-saludo">Hola, ${usuario.nombre}</span>
+            <a href="planes.html" class="btn-auth btn-planes">💎 Planes</a>
             ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
             <button class="btn-auth btn-salir" onclick="cerrarSesion()">Salir</button>

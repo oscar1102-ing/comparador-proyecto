@@ -138,33 +138,48 @@ def obtener_producto(nombre: str):
 def obtener_similares(nombre: str):
     conexion = conectar_base()
     cursor = conexion.cursor()
-
-    palabra = nombre.split(" ")[0].lower()
-
-    consulta = """
+    
+    # Usar las primeras 3 palabras para más precisión
+    palabras = nombre.lower().split()
+    terminos = palabras[:3]
+    
+    # Construir condición con todas las palabras clave
+    condiciones = " AND ".join(["LOWER(p.nombre) LIKE %s" for _ in terminos])
+    valores = [f"%{t}%" for t in terminos]
+    
+    consulta = f"""
     SELECT p.nombre, MIN(pr.precio) as precio, p.imagen_url
     FROM productos p
     JOIN precios pr ON pr.producto_id = p.id
-    WHERE LOWER(p.nombre) LIKE %s
+    WHERE {condiciones}
+    AND LOWER(p.nombre) != %s
     GROUP BY p.nombre, p.imagen_url
     LIMIT 5
     """
-
-    cursor.execute(consulta, (f"%{palabra}%",))
+    valores.append(nombre.lower())
+    cursor.execute(consulta, valores)
     resultado = cursor.fetchall()
+    
+    # Si no encuentra con 3 palabras, intentar con 2
+    if not resultado and len(terminos) >= 2:
+        condiciones = " AND ".join(["LOWER(p.nombre) LIKE %s" for _ in terminos[:2]])
+        valores = [f"%{t}%" for t in terminos[:2]] + [nombre.lower()]
+        consulta = f"""
+        SELECT p.nombre, MIN(pr.precio) as precio, p.imagen_url
+        FROM productos p
+        JOIN precios pr ON pr.producto_id = p.id
+        WHERE {condiciones}
+        AND LOWER(p.nombre) != %s
+        GROUP BY p.nombre, p.imagen_url
+        LIMIT 5
+        """
+        cursor.execute(consulta, valores)
+        resultado = cursor.fetchall()
 
     cursor.close()
     conexion.close()
-
-    similares = []
-    for fila in resultado:
-        similares.append({
-            "nombre": fila[0],
-            "precio": float(fila[1]),
-            "imagen": fila[2] or ""   # ← usamos "imagen" (como espera el frontend) y mapeamos desde imagen_url
-        })
-
-    return similares
+    
+    return [{"nombre": f[0], "precio": float(f[1]), "imagen": f[2] or ""} for f in resultado]
     
 def eliminar_producto(id: int):
     conexion = conectar_base()
