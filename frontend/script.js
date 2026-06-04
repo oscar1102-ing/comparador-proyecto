@@ -389,6 +389,7 @@ function actualizarHeader() {
     if (usuario) {
         const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
+            <a href="planes.html" class="btn-auth" style="background:#f1f5f9; color:#ff6b00;">💎 Planes</a>
             <span class="btn-auth">Hola, ${usuario.nombre}</span>
             ${esAdmin ? '<a href="admin.html" class="btn-auth" style="background:#1e293b;">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth">Mi cuenta</a>
@@ -396,6 +397,7 @@ function actualizarHeader() {
         `;
     } else {
         authDiv.innerHTML = `
+            <a href="planes.html" class="btn-auth" style="background:#f1f5f9; color:#ff6b00;">💎 Planes</a>
             <a href="login.html" class="btn-auth">Ingresar</a>
             <a href="registrar.html" class="btn-auth">Registro</a>
         `;

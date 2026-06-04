@@ -4,9 +4,21 @@
     <meta charset="UTF-8">
     <title>Mi cuenta</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .dash-stat { background: #f8fafc; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #e2e8f0; }
+        .dash-stat-num { font-size: 28px; font-weight: 700; color: #ff6b00; }
+        .dash-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .plan-card { border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1.5px solid #e2e8f0; }
+        .plan-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+        .progress-bar { background: #f1f5f9; border-radius: 6px; height: 8px; overflow: hidden; margin: 6px 0 4px; }
+        .progress-fill { height: 100%; border-radius: 6px; background: #ff6b00; transition: width 0.5s; }
+        .dash-btn { display: block; text-align: center; padding: 12px; border-radius: 10px; 
+                    text-decoration: none; font-weight: 600; font-size: 14px; border: none; cursor: pointer; width: 100%; }
+        @media(max-width:500px){ .dash-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
-
 <header>
     <div class="logo">
         <a href="index.html"><img src="imagenes/logo1.png" alt="logo"></a>
@@ -19,41 +31,143 @@
 </header>
 
 <main class="auth-container">
-    <div class="auth-card" style="max-width: 600px;">
+    <div class="auth-card" style="max-width:620px;">
 
-        <div id="perfil-header" style="text-align:center; margin-bottom: 24px;">
-            <div style="font-size: 64px;">👤</div>
-            <h2 id="dash-nombre"></h2>
-            <p id="dash-email" style="color: #888;"></p>
+        <!-- Perfil -->
+        <div style="text-align:center; margin-bottom:24px;">
+            <div style="font-size:56px;">👤</div>
+            <h2 id="dash-nombre" style="margin:8px 0 4px;"></h2>
+            <p id="dash-email" style="color:#888; margin:0; font-size:14px;"></p>
+            <span id="dash-badge-rol" style="margin-top:8px; display:inline-block;"></span>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <a href="favoritos.html" class="btn-auth" style="text-align:center; padding: 12px;">
+        <!-- Stats rápidas -->
+        <div class="dash-grid" id="dash-stats">
+            <div class="dash-stat">
+                <div class="dash-stat-num" id="stat-comparaciones">–</div>
+                <div class="dash-stat-label">Comparaciones este mes</div>
+            </div>
+            <div class="dash-stat">
+                <div class="dash-stat-num" id="stat-favoritos">–</div>
+                <div class="dash-stat-label">Favoritos guardados</div>
+            </div>
+        </div>
+
+        <!-- Plan actual -->
+        <div class="plan-card" id="plan-card">
+            <div id="plan-badge" class="plan-badge"></div>
+            <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Tu plan actual</div>
+
+            <div style="font-size:13px; color:#64748b; margin-bottom:4px;">
+                Comparaciones
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="prog-comparaciones" style="width:0%"></div>
+            </div>
+            <div style="font-size:12px; color:#94a3b8;" id="txt-comparaciones"></div>
+
+            <div style="font-size:13px; color:#64748b; margin-bottom:4px; margin-top:12px;">
+                Favoritos
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="prog-favoritos" style="width:0%"></div>
+            </div>
+            <div style="font-size:12px; color:#94a3b8;" id="txt-favoritos"></div>
+        </div>
+
+        <!-- Botón mejorar plan -->
+        <a href="planes.html" class="dash-btn" 
+           style="background:#ff6b00; color:white; margin-bottom:12px;">
+            💎 Ver o mejorar mi plan
+        </a>
+
+        <!-- Accesos rápidos -->
+        <div class="dash-grid" style="margin-bottom:12px;">
+            <a href="favoritos.html" class="dash-btn" style="background:#f1f5f9; color:#1a1a1a;">
                 ⭐ Mis favoritos
             </a>
-            <a href="historial.html" class="btn-auth" style="text-align:center; padding: 12px;">
+            <a href="historial.html" class="dash-btn" style="background:#f1f5f9; color:#1a1a1a;">
                 🕐 Mi historial
             </a>
-            <button onclick="cerrarSesion()" class="btn-auth" 
-                style="background: #e74c3c; text-align:center; padding: 12px; border: none; cursor: pointer; width: 100%;">
-                🚪 Cerrar sesión
-            </button>
         </div>
 
+        <button onclick="cerrarSesion()" class="dash-btn"
+            style="background:#fee2e2; color:#dc2626;">
+            🚪 Cerrar sesión
+        </button>
     </div>
 </main>
 
 <script src="script.js"></script>
 <script>
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+if (!usuario) {
+    window.location.href = "/login.html";
+} else {
+    actualizarHeader();
+    document.getElementById("dash-nombre").textContent = usuario.nombre;
+    document.getElementById("dash-email").textContent = usuario.email;
 
-    if (!usuario) {
-        window.location.href = "/login.html";
-    } else {
-        document.getElementById("dash-nombre").textContent = usuario.nombre;
-        document.getElementById("dash-email").textContent = usuario.email;
-    }
+    const COLORES_ROL = {
+        root:    { bg: "#7c3aed", color: "white", label: "👑 Root" },
+        admin:   { bg: "#ff6b00", color: "white", label: "⚙️ Admin" },
+        pro:     { bg: "#0ea5e9", color: "white", label: "💎 Pro" },
+        basico:  { bg: "#f59e0b", color: "white", label: "⭐ Básico" },
+        usuario: { bg: "#e2e8f0", color: "#64748b", label: "👤 Gratuito" }
+    };
+    const rol = usuario.rol || "usuario";
+    const cfg = COLORES_ROL[rol] || COLORES_ROL.usuario;
+    const badge = document.getElementById("dash-badge-rol");
+    badge.textContent = cfg.label;
+    badge.style.background = cfg.bg;
+    badge.style.color = cfg.color;
+    badge.style.padding = "4px 14px";
+    badge.style.borderRadius = "20px";
+    badge.style.fontSize = "13px";
+    badge.style.fontWeight = "600";
+
+    // Cargar info del plan
+    fetch(`/api/plan/${usuario.id}`)
+        .then(r => r.json())
+        .then(plan => {
+            // Stats
+            document.getElementById("stat-comparaciones").textContent = plan.comparaciones_usadas;
+            document.getElementById("stat-favoritos").textContent = plan.favoritos_usados;
+
+            // Barra comparaciones
+            const limComp = plan.comparaciones_limite;
+            const usadComp = plan.comparaciones_usadas;
+            document.getElementById("prog-comparaciones").style.width =
+                limComp ? Math.min((usadComp / limComp) * 100, 100) + "%" : "100%";
+            document.getElementById("txt-comparaciones").textContent =
+                limComp ? `${usadComp} de ${limComp} usadas` : "Ilimitadas ✨";
+            if (limComp) document.getElementById("prog-comparaciones").style.background =
+                usadComp >= limComp ? "#ef4444" : "#ff6b00";
+
+            // Barra favoritos
+            const limFav = plan.favoritos_limite;
+            const usadFav = plan.favoritos_usados;
+            document.getElementById("prog-favoritos").style.width =
+                limFav ? Math.min((usadFav / limFav) * 100, 100) + "%" : "100%";
+            document.getElementById("txt-favoritos").textContent =
+                limFav ? `${usadFav} de ${limFav} guardados` : "Ilimitados ✨";
+            if (limFav) document.getElementById("prog-favoritos").style.background =
+                usadFav >= limFav ? "#ef4444" : "#ff6b00";
+
+            // Badge plan
+            const planBadge = document.getElementById("plan-badge");
+            planBadge.textContent = cfg.label;
+            planBadge.style.background = cfg.bg + "22";
+            planBadge.style.color = cfg.bg;
+
+            // Si es ilimitado ocultar barras
+            if (!limComp && !limFav) {
+                document.getElementById("plan-card").style.background = "#f0fdf4";
+                document.getElementById("plan-card").style.borderColor = "#22c55e";
+            }
+        })
+        .catch(() => {});
+}
 </script>
-
 </body>
 </html>
