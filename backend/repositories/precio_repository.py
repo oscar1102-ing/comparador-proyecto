@@ -56,33 +56,64 @@ def obtener_productos_top():
     return productos
 
 
-def obtener_precios_producto(producto: str, categoria: str = "", pagina: int = 1, por_pagina: int = 10):
+def obtener_precios_producto(producto: str, categoria: str = "", pagina: int = 1, 
+                              por_pagina: int = 10, tienda: str = "", 
+                              precio_min: str = "", precio_max: str = ""):
     conexion = conectar_base()
     cursor = conexion.cursor()
+
     producto_normalizado = producto.lower().strip().replace(" ", "")
     categoria_normalizada = categoria.lower().strip()
 
-    if categoria_normalizada:
-        where = """
-            FROM precios pr
-            JOIN productos p ON pr.producto_id = p.id
-            JOIN tiendas t ON pr.tienda_id = t.id
-            JOIN categorias c ON p.categoria_id = c.id
-            WHERE LOWER(c.nombre) LIKE %s
-        """
-        params_count = (f"%{categoria_normalizada}%",)
-        params_query = (f"%{categoria_normalizada}%", por_pagina, (pagina - 1) * por_pagina)
-    else:
-        where = """
-            FROM precios pr
-            JOIN productos p ON pr.producto_id = p.id
-            JOIN tiendas t ON pr.tienda_id = t.id
-            WHERE LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s
-        """
-        params_count = (f"%{producto_normalizado}%",)
-        params_query = (f"%{producto_normalizado}%", por_pagina, (pagina - 1) * por_pagina)
+    condiciones = []
+    params = []
 
-    cursor.execute(f"SELECT COUNT(*) {where}", params_count)
+    # Si no hay búsqueda ni categoría, mostrar todos
+    if not producto_normalizado and not categoria_normalizada:
+        condiciones.append("1=1")
+
+    # Filtro por texto de búsqueda
+    if producto_normalizado:
+        condiciones.append("LOWER(REPLACE(p.nombre, ' ', '')) LIKE %s")
+        params.append(f"%{producto_normalizado}%")
+
+    # Filtro por categoría (se combina con la búsqueda si hay)
+    if categoria_normalizada:
+        condiciones.append("LOWER(c.nombre) LIKE %s")
+        params.append(f"%{categoria_normalizada}%")
+
+    # Filtro por tienda (puede venir separado por comas)
+    if tienda:
+        tiendas_lista = [t.strip() for t in tienda.split(",")]
+        placeholders = ", ".join(["%s"] * len(tiendas_lista))
+        condiciones.append(f"LOWER(t.nombre) IN ({placeholders})")
+        params.extend([t.lower() for t in tiendas_lista])
+
+    # Filtro por precio mínimo
+    if precio_min:
+        try:
+            condiciones.append("pr.precio >= %s")
+            params.append(float(precio_min))
+        except ValueError:
+            pass
+
+    # Filtro por precio máximo
+    if precio_max:
+        try:
+            condiciones.append("pr.precio <= %s")
+            params.append(float(precio_max))
+        except ValueError:
+            pass
+
+    where = """
+        FROM precios pr
+        JOIN productos p ON pr.producto_id = p.id
+        JOIN tiendas t ON pr.tienda_id = t.id
+        JOIN categorias c ON p.categoria_id = c.id
+        WHERE {condiciones}
+    """.format(condiciones=" AND ".join(condiciones))
+
+    cursor.execute(f"SELECT COUNT(*) {where}", params)
     total = cursor.fetchone()[0]
 
     cursor.execute(f"""
@@ -90,24 +121,23 @@ def obtener_precios_producto(producto: str, categoria: str = "", pagina: int = 1
         {where}
         ORDER BY pr.precio ASC
         LIMIT %s OFFSET %s
-    """, params_query)
+    """, params + [por_pagina, (pagina - 1) * por_pagina])
 
     resultado = cursor.fetchall()
     cursor.close()
     conexion.close()
 
-    productos = []
-    for fila in resultado:
-        productos.append({
-            "id": fila[0],
-            "nombre": fila[1],
-            "tienda": fila[2],
-            "precio": float(fila[3]),
-            "imagen": fila[4] or "imagenes/logo1.png"
-        })
-
     return {
-        "productos": productos,
+        "productos": [
+            {
+                "id": fila[0],
+                "nombre": fila[1],
+                "tienda": fila[2],
+                "precio": float(fila[3]),
+                "imagen": fila[4] or "imagenes/logo1.png"
+            }
+            for fila in resultado
+        ],
         "total": total,
         "pagina": pagina,
         "por_pagina": por_pagina,

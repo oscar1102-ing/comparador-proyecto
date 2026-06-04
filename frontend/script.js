@@ -64,8 +64,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const aplicarFiltros = document.querySelector(".aplicar-filtros");
     if (aplicarFiltros) {
         aplicarFiltros.addEventListener("click", () => {
+            const categorias = [...document.querySelectorAll(".filtro-categoria:checked")]
+                .map(c => c.value);
+            const tiendas = [...document.querySelectorAll(".filtro-tienda:checked")]
+                .map(t => t.value);
+            const precioMin = document.getElementById("precioMin")?.value || "";
+            const precioMax = document.getElementById("precioMax")?.value || "";
+
+            const nuevaURL = new URL(window.location);
+            // Mantener búsqueda actual
+            nuevaURL.searchParams.delete("categoria");
+            nuevaURL.searchParams.delete("tienda");
+            nuevaURL.searchParams.delete("precio_min");
+            nuevaURL.searchParams.delete("precio_max");
+
+            if (categorias.length === 1) nuevaURL.searchParams.set("categoria", categorias[0]);
+            if (tiendas.length > 0) nuevaURL.searchParams.set("tienda", tiendas.join(","));
+            if (precioMin) nuevaURL.searchParams.set("precio_min", precioMin);
+            if (precioMax) nuevaURL.searchParams.set("precio_max", precioMax);
+
+            window.history.replaceState({}, "", nuevaURL);
+
+            // Cerrar panel
+            document.getElementById("panelFiltros").classList.remove("activo");
+            document.getElementById("overlay").classList.remove("activo");
+
+            cargarProductos(1);
+        });
+    }
+    
+    // Limpiar filtros
+    const limpiarFiltros = document.querySelector(".limpiar-filtros");
+    if (limpiarFiltros) {
+        limpiarFiltros.addEventListener("click", () => {
+            document.querySelectorAll(".filtro-categoria, .filtro-tienda")
+                .forEach(c => c.checked = false);
+            document.getElementById("precioMin").value = "";
+            document.getElementById("precioMax").value = "";
+
             const nuevaURL = new URL(window.location);
             nuevaURL.searchParams.delete("categoria");
+            nuevaURL.searchParams.delete("tienda");
+            nuevaURL.searchParams.delete("precio_min");
+            nuevaURL.searchParams.delete("precio_max");
             window.history.replaceState({}, "", nuevaURL);
             cargarProductos(1);
         });
@@ -117,6 +158,9 @@ async function cargarProductos(pagina = 1) {
     const params = new URLSearchParams(window.location.search);
     busquedaActual = params.get("q") || "";
     const categoriaActual = params.get("categoria") || "";
+    const tiendaActual = params.get("tienda") || "";
+    const precioMin = params.get("precio_min") || "";
+    const precioMax = params.get("precio_max") || "";
 
     const contenedor = document.getElementById("lista-productos");
     if (!contenedor) return;
@@ -141,7 +185,9 @@ async function cargarProductos(pagina = 1) {
     }
 
     try {
-        const response = await fetch(`/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&pagina=${pagina}&por_pagina=10`);
+        const response = await fetch(
+        `/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&tienda=${tiendaActual}&precio_min=${precioMin}&precio_max=${precioMax}&pagina=${pagina}&por_pagina=10`
+    );
         const data = await response.json();
 
         paginaActual = data.pagina;
