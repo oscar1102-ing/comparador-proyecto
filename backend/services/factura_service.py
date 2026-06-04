@@ -165,16 +165,7 @@ def generar_factura_pdf(nombre: str, email: str, plan: str) -> bytes:
     story.append(Paragraph("(precio mensual, renovación automática)", estilo_footer))
     story.append(Spacer(1, 20))
  
-    # ── INSTRUCCIONES DE PAGO ──
-    story.append(Paragraph("Instrucciones para completar tu suscripción", estilo_seccion))
-    instrucciones = [
-        "1. Realiza el pago por el medio acordado con el administrador.",
-        "2. Envía el comprobante de pago al correo del administrador.",
-        "3. En un plazo máximo de 24 horas tu plan será activado.",
-        "4. Recibirás una confirmación una vez tu cuenta sea actualizada.",
-    ]
-    for inst in instrucciones:
-        story.append(Paragraph(inst, estilo_normal))
+
  
     story.append(Spacer(1, 24))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e2e8f0"), spaceAfter=10))
