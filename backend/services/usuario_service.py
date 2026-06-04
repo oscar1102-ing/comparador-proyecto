@@ -35,6 +35,7 @@ def registrar_usuario(datos):
     if not enviado:
         # Opcional: loguear error pero no fallar el registro
         print(f"Error enviando correo a {datos.email}")
+        
 
     # No devolver el QR al frontend
     return {
@@ -83,6 +84,12 @@ def activar_mfa(usuario_id: int, codigo: str):
  
     # Activar cuenta
     repo.activar_mfa(usuario_id)
+    
+    from services import email_service
+    try:
+        email_service.enviar_bienvenida(usuario[2], usuario[1])
+    except Exception as e:
+        print(f"Error enviando bienvenida: {e}")
  
     # Generar token JWT para iniciar sesión automáticamente
     token = jwt.encode({

@@ -1,8 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+    verificarSesionActiva();
     cargarProductos();
     cargarTop();
     cargarDetalle();
     actualizarHeader();
+
     
     
 
@@ -358,6 +360,26 @@ function cerrarSesion() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
     window.location.href = "/index.html";
+}
+
+async function verificarSesionActiva() {
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+    if (!usuario) return;
+    
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.id}`);
+        const data = await res.json();
+        
+        // Si el rol cambió, actualizar localStorage
+        if (data.rol !== usuario.rol) {
+            usuario.rol = data.rol;
+            localStorage.setItem("usuario", JSON.stringify(usuario));
+            // Recargar para aplicar cambios
+            window.location.reload();
+        }
+    } catch (e) {
+        console.error("Error verificando sesión:", e);
+    }
 }
 
 // ── FAVORITOS (actualizado con límite) ──
