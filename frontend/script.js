@@ -170,7 +170,7 @@ async function cargarProductos(pagina = 1) {
             contenedor.innerHTML += `
                 <article class="producto-busqueda">
                     <img src="${(prod.imagen && prod.imagen !== 'null') ? prod.imagen : 'imagenes/logo1.png'}"
-                         alt="producto" style="width:100px; height:100px; object-fit:contain;">
+     alt="producto">
                     <div class="info-producto-busqueda">
                         <h3>${prod.nombre}</h3>
                         <p class="precio">${formatearPrecio(prod.precio)}</p>
@@ -338,11 +338,11 @@ function actualizarHeader() {
     if (usuario) {
         const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
-            <a href="planes.html" class="btn-auth" style="background:#f1f5f9; color:#ff6b00;">💎 Planes</a>
-            <span class="btn-auth">Hola, ${usuario.nombre}</span>
-            ${esAdmin ? '<a href="admin.html" class="btn-auth" style="background:#1e293b;">⚙️ Admin</a>' : ''}
-            <a href="dashboard.html" class="btn-auth">Mi cuenta</a>
-            <button class="btn-auth" onclick="cerrarSesion()">Salir</button>
+            <a href="planes.html" class="btn-auth btn-planes">💎 Planes</a>
+            <span class="btn-auth btn-saludo">Hola, ${usuario.nombre}</span>
+            ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
+            <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
+            <button class="btn-auth btn-salir" onclick="cerrarSesion()">Salir</button>
         `;
     } else {
         authDiv.innerHTML = `
