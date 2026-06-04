@@ -145,6 +145,10 @@ def cambiar_rol(id: int, nuevo_rol: str):
             return {"error": "Usuario no encontrado"}
 
         es_root_actual, rol_actual = usuario
+        
+        # No permitir promover a root desde la app
+        if nuevo_rol == 'root':
+            return {"error": "No se puede asignar rol root desde la aplicación. Solo desde la base de datos."}
 
         # No se puede modificar un root existente desde la app
         if es_root_actual is True or rol_actual == 'root':
