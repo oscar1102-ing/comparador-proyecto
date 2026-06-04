@@ -78,10 +78,12 @@ def obtener_precios_producto(producto: str, categoria: str = "", pagina: int = 1
         params.append(f"%{producto_normalizado}%")
 
     # Filtro por categoría (se combina con la búsqueda si hay)
+    # Reemplaza el filtro de categoría por esto:
     if categoria_normalizada:
-        condiciones.append("LOWER(c.nombre) LIKE %s")
-        params.append(f"%{categoria_normalizada}%")
-
+        cats = [c.strip() for c in categoria_normalizada.split(",")]
+        placeholders = ", ".join(["%s"] * len(cats))
+        condiciones.append(f"LOWER(c.nombre) IN ({placeholders})")
+        params.extend(cats)
     # Filtro por tienda (puede venir separado por comas)
     if tienda:
         tiendas_lista = [t.strip() for t in tienda.split(",")]

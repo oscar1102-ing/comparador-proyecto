@@ -60,57 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Aplicar filtros
-    const aplicarFiltros = document.querySelector(".aplicar-filtros");
-    if (aplicarFiltros) {
-        aplicarFiltros.addEventListener("click", () => {
-            const categorias = [...document.querySelectorAll(".filtro-categoria:checked")]
-                .map(c => c.value);
-            const tiendas = [...document.querySelectorAll(".filtro-tienda:checked")]
-                .map(t => t.value);
-            const precioMin = document.getElementById("precioMin")?.value || "";
-            const precioMax = document.getElementById("precioMax")?.value || "";
-
-            const nuevaURL = new URL(window.location);
-            // Mantener búsqueda actual
-            nuevaURL.searchParams.delete("categoria");
-            nuevaURL.searchParams.delete("tienda");
-            nuevaURL.searchParams.delete("precio_min");
-            nuevaURL.searchParams.delete("precio_max");
-
-            if (categorias.length === 1) nuevaURL.searchParams.set("categoria", categorias[0]);
-            if (tiendas.length > 0) nuevaURL.searchParams.set("tienda", tiendas.join(","));
-            if (precioMin) nuevaURL.searchParams.set("precio_min", precioMin);
-            if (precioMax) nuevaURL.searchParams.set("precio_max", precioMax);
-
-            window.history.replaceState({}, "", nuevaURL);
-
-            // Cerrar panel
-            document.getElementById("panelFiltros").classList.remove("activo");
-            document.getElementById("overlay").classList.remove("activo");
-
-            cargarProductos(1);
-        });
-    }
-    
-    // Limpiar filtros
-    const limpiarFiltros = document.querySelector(".limpiar-filtros");
-    if (limpiarFiltros) {
-        limpiarFiltros.addEventListener("click", () => {
-            document.querySelectorAll(".filtro-categoria, .filtro-tienda")
-                .forEach(c => c.checked = false);
-            document.getElementById("precioMin").value = "";
-            document.getElementById("precioMax").value = "";
-
-            const nuevaURL = new URL(window.location);
-            nuevaURL.searchParams.delete("categoria");
-            nuevaURL.searchParams.delete("tienda");
-            nuevaURL.searchParams.delete("precio_min");
-            nuevaURL.searchParams.delete("precio_max");
-            window.history.replaceState({}, "", nuevaURL);
-            cargarProductos(1);
-        });
-    }
 });
 
 // ── UTILIDADES ──
@@ -683,3 +632,48 @@ function mostrarModalLimite(tipo, limite) {
     });
     document.body.appendChild(modal);
 }
+
+// ── FILTROS (delegación de eventos) ──
+document.addEventListener("click", (e) => {
+    if (e.target.matches(".aplicar-filtros")) {
+        const categorias = [...document.querySelectorAll(".filtro-categoria:checked")]
+            .map(c => c.value);
+        const tiendas = [...document.querySelectorAll(".filtro-tienda:checked")]
+            .map(t => t.value);
+        const precioMin = document.getElementById("precioMin")?.value || "";
+        const precioMax = document.getElementById("precioMax")?.value || "";
+
+        const nuevaURL = new URL(window.location);
+        nuevaURL.searchParams.delete("categoria");
+        nuevaURL.searchParams.delete("tienda");
+        nuevaURL.searchParams.delete("precio_min");
+        nuevaURL.searchParams.delete("precio_max");
+
+        if (categorias.length > 0) nuevaURL.searchParams.set("categoria", categorias.join(","));
+        if (tiendas.length > 0) nuevaURL.searchParams.set("tienda", tiendas.join(","));
+        if (precioMin) nuevaURL.searchParams.set("precio_min", precioMin);
+        if (precioMax) nuevaURL.searchParams.set("precio_max", precioMax);
+
+        window.history.replaceState({}, "", nuevaURL);
+        document.getElementById("panelFiltros")?.classList.remove("activo");
+        document.getElementById("overlay")?.classList.remove("activo");
+        cargarProductos(1);
+    }
+
+    if (e.target.matches(".limpiar-filtros")) {
+        document.querySelectorAll(".filtro-categoria, .filtro-tienda")
+            .forEach(c => c.checked = false);
+        const min = document.getElementById("precioMin");
+        const max = document.getElementById("precioMax");
+        if (min) min.value = "";
+        if (max) max.value = "";
+
+        const nuevaURL = new URL(window.location);
+        nuevaURL.searchParams.delete("categoria");
+        nuevaURL.searchParams.delete("tienda");
+        nuevaURL.searchParams.delete("precio_min");
+        nuevaURL.searchParams.delete("precio_max");
+        window.history.replaceState({}, "", nuevaURL);
+        cargarProductos(1);
+    }
+});
