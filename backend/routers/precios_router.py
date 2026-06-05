@@ -347,3 +347,10 @@ def estadisticas_tiempo():
     finally:
         cursor.close()
         conexion.close()
+        
+@router.put("/usuarios/{usuario_id}/actualizar")
+def actualizar_perfil(usuario_id: int, datos: dict):
+    resultado = usuario_service.actualizar_perfil(usuario_id, datos)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado

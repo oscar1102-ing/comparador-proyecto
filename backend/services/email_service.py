@@ -282,3 +282,38 @@ def enviar_bienvenida(email_destino: str, nombre: str):
     except Exception as e:
         print(f"Error enviando bienvenida: {e}")
         return False
+        
+        
+def enviar_cambio_email(email_destino: str, nombre: str):
+    mensaje = MIMEMultipart("alternative")
+    mensaje["Subject"] = "Tu correo fue actualizado - PriceCompare"
+    mensaje["From"] = MAIL_FROM
+    mensaje["To"] = email_destino
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 520px; margin: auto;">
+        <div style="background: #ff6b00; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">PriceCompare</h1>
+        </div>
+        <div style="padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+            <h2>Hola, {nombre} 👋</h2>
+            <p>Tu correo electrónico ha sido actualizado exitosamente en PriceCompare.</p>
+            <div style="background: #fff3cd; border-left: 4px solid #ff6b00;
+                        padding: 12px 16px; border-radius: 0 8px 8px 0; color: #555;">
+                ⚠️ Si no fuiste tú quien hizo este cambio, contáctanos de inmediato.
+            </div>
+            <p style="color: #888; font-size: 13px; margin-top: 20px;">
+                Este correo es solo una notificación, no se requiere ninguna acción.
+            </p>
+        </div>
+    </body></html>
+    """
+    mensaje.attach(MIMEText(html, "html"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.sendmail(MAIL_FROM, email_destino, mensaje.as_string())
+        return True
+    except Exception as e:
+        print(f"Error enviando notificación de cambio de email: {e}")
+        return False

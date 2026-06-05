@@ -90,6 +90,37 @@
                 🕐 Mi historial
             </a>
         </div>
+        
+        <!-- Editar perfil -->
+        <div style="margin-bottom:12px;">
+            <button onclick="toggleEditarPerfil()"
+                class="dash-btn" id="btn-toggle-editar"
+                style="background:#f1f5f9; color:#1a1a1a;">
+                ✏️ Editar perfil
+            </button>
+
+            <div id="seccion-editar" style="display:none; margin-top:16px; 
+                 background:#f8fafc; border-radius:12px; padding:20px; border:1px solid #e2e8f0;">
+                <h3 style="margin:0 0 16px; font-size:15px; color:#1e293b;">Editar mis datos</h3>
+
+                <label style="font-size:13px; color:#64748b;">Nombre</label>
+                <input id="edit-nombre" type="text" style="width:100%; padding:10px; border:1px solid #e2e8f0;
+                       border-radius:8px; margin:6px 0 12px; font-size:14px; box-sizing:border-box;">
+
+
+                <label style="font-size:13px; color:#64748b;">Correo electrónico</label>
+                <input id="edit-email" type="email" style="width:100%; padding:10px; border:1px solid #e2e8f0;
+                       border-radius:8px; margin:6px 0 4px; font-size:14px; box-sizing:border-box;">
+                <p style="font-size:11px; color:#94a3b8; margin:0 0 16px;">
+                    ⚠️ Si cambias el correo recibirás un email de verificación.
+                </p>
+
+                <button onclick="guardarPerfil()" class="dash-btn"
+                    style="background:#ff6b00; color:white;">
+                    💾 Guardar cambios
+                </button>
+            </div>
+        </div>
 
         <button onclick="cerrarSesion()" class="dash-btn"
             style="background:#fee2e2; color:#dc2626;">

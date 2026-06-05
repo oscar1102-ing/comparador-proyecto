@@ -634,6 +634,72 @@ function mostrarModalLimite(tipo, limite) {
     document.body.appendChild(modal);
 }
 
+function toggleEditarPerfil() {
+    const seccion = document.getElementById("seccion-editar");
+    const btn = document.getElementById("btn-toggle-editar");
+    const visible = seccion.style.display !== "none";
+    seccion.style.display = visible ? "none" : "block";
+    btn.textContent = visible ? "✏️ Editar perfil" : "✕ Cancelar edición";
+
+    if (!visible) {
+        // Prellenar con datos actuales
+        document.getElementById("edit-nombre").value = usuario.nombre || "";
+        document.getElementById("edit-email").value = usuario.email || "";
+
+    }
+}
+
+async function guardarPerfil() {
+    const nuevoNombre = document.getElementById("edit-nombre").value.trim();
+    const nuevoEmail = document.getElementById("edit-email").value.trim();
+
+    if (!nuevoNombre || !nuevoEmail) {
+        mostrarToast("Nombre y correo son obligatorios", "error");
+        return;
+    }
+
+    const emailCambio = nuevoEmail !== usuario.email;
+
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.id}/actualizar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: nuevoNombre,
+                email: nuevoEmail,
+                
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            mostrarToast(data.detail || "Error al guardar", "error");
+            return;
+        }
+
+        // Actualizar localStorage
+        usuario.nombre = nuevoNombre;
+        usuario.email = nuevoEmail;
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+
+        // Actualizar UI
+        document.getElementById("dash-nombre").textContent = nuevoNombre;
+        document.getElementById("dash-email").textContent = nuevoEmail;
+
+        if (emailCambio) {
+            mostrarToast("Datos guardados. Revisa tu correo para verificar el nuevo email.", "info");
+        } else {
+            mostrarToast("Perfil actualizado correctamente", "success");
+        }
+
+        toggleEditarPerfil(); // cerrar sección
+
+    } catch (err) {
+        mostrarToast("Error de conexión", "error");
+    }
+}
+
 // ── FILTROS (delegación de eventos) ──
 document.addEventListener("click", (e) => {
     if (e.target.matches(".aplicar-filtros")) {
@@ -645,7 +711,7 @@ document.addEventListener("click", (e) => {
         const precioMax = document.getElementById("precioMax")?.value || "";
 
         const nuevaURL = new URL(window.location);
-        nuevaURL.searchParams.delete("categoria");
+        // DESPUÉS
         nuevaURL.searchParams.delete("tienda");
         nuevaURL.searchParams.delete("precio_min");
         nuevaURL.searchParams.delete("precio_max");
