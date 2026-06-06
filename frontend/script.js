@@ -348,7 +348,7 @@ function actualizarHeader() {
                        font-weight:600; transition:background 0.2s;"
                 onmouseover="this.style.background='#fee2e2'"
                 onmouseout="this.style.background='#fff0f0'">
-                fidelizacion
+                fidelizacionnn
             </button>
             ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
@@ -899,10 +899,8 @@ async function aceptarFidelizacion(planDestino) {
         });
         const data = await res.json();
 
-        if (!res.ok) {
-            mostrarToast(data.detail || "Error al aplicar fidelización", "error");
-            if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = false);
-            return;
+        if (!res.ok) { mostrarToast(data.detail || "Error al aplicar fidelización", "error"); if (modal) 
+            modal.querySelectorAll("button").forEach(b => b.disabled = false); return;
         }
 
         // Actualizar rol en localStorage
