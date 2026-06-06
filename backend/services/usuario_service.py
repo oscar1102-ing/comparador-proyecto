@@ -5,6 +5,7 @@ import jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from database import conectar_base
  
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_cambiala")
@@ -35,6 +36,7 @@ def registrar_usuario(datos):
     if not enviado:
         # Opcional: loguear error pero no fallar el registro
         print(f"Error enviando correo a {datos.email}")
+        
 
     # No devolver el QR al frontend
     return {
@@ -83,6 +85,12 @@ def activar_mfa(usuario_id: int, codigo: str):
  
     # Activar cuenta
     repo.activar_mfa(usuario_id)
+    
+    from services import email_service
+    try:
+        email_service.enviar_bienvenida(usuario[2], usuario[1])
+    except Exception as e:
+        print(f"Error enviando bienvenida: {e}")
  
     # Generar token JWT para iniciar sesión automáticamente
     token = jwt.encode({
@@ -156,3 +164,49 @@ def verificar_token(token: str):
     except Exception:
         return None
 
+
+def actualizar_perfil(usuario_id: int, datos: dict):
+    nombre = datos.get("nombre", "").strip()
+    email = datos.get("email", "").strip()
+
+    if not nombre or not email:
+        return {"error": "Nombre y correo son obligatorios"}
+
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Obtener datos actuales
+        cursor.execute("SELECT nombre, email FROM usuarios WHERE id = %s", (usuario_id,))
+        fila = cursor.fetchone()
+        if not fila:
+            return {"error": "Usuario no encontrado"}
+
+        email_actual = fila[1]
+        email_cambio = email != email_actual
+
+        # Verificar que el nuevo email no lo use otro usuario
+        if email_cambio:
+            cursor.execute("SELECT id FROM usuarios WHERE email = %s AND id != %s", (email, usuario_id))
+            if cursor.fetchone():
+                return {"error": "Ese correo ya está en uso por otra cuenta"}
+
+        # Actualizar datos
+        cursor.execute(
+            "UPDATE usuarios SET nombre = %s, email = %s WHERE id = %s",
+            (nombre, email, usuario_id)
+        )
+        conexion.commit()
+
+        # Si cambió el email, enviar correo de notificación
+        if email_cambio:
+            from services.email_service import enviar_cambio_email
+            enviar_cambio_email(email, nombre)
+
+        return {"mensaje": "Perfil actualizado", "nombre": nombre, "email": email}
+
+    except Exception as e:
+        print(f"Error actualizando perfil: {e}")
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+        conexion.close()

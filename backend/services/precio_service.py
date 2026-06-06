@@ -21,26 +21,29 @@ def registrar_precio(producto, tienda, precio):
 
     return precio_repository.guardar_precio(id_producto, id_tienda, precio)
 
-def comparar_precios_producto(producto: str, categoria: str = "", pagina: int = 1, por_pagina: int = 10):
-    return precio_repository.obtener_precios_producto(producto, categoria, pagina, por_pagina)
-
+def comparar_precios_producto(producto: str, categoria: str = "", pagina: int = 1, 
+                               por_pagina: int = 10, tienda: str = "", 
+                               precio_min: str = "", precio_max: str = ""):
+    return precio_repository.obtener_precios_producto(
+        producto, categoria, pagina, por_pagina, tienda, precio_min, precio_max
+    )
 
 def obtener_top_productos():
     return precio_repository.obtener_productos_top()
 
 
 def obtener_detalle_producto(nombre: str):
-
     producto = producto_repository.obtener_producto(nombre)
-    tiendas = tienda_repository.obtener_tiendas_producto(nombre)
+    if not producto:
+        return {"producto": None, "tiendas": [], "similares": []}
+    # Usar ID para buscar por similitud en vez de nombre exacto
+    tiendas = tienda_repository.obtener_tiendas_por_id(producto["id"])
     similares = producto_repository.obtener_similares(nombre)
-
     return {
         "producto": producto,
         "tiendas": tiendas,
         "similares": similares
     }
-
 
 
 

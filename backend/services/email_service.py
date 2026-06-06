@@ -197,3 +197,123 @@ def enviar_factura_plan(email_destino: str, nombre: str, plan: str, pdf_bytes: b
         print(f"Error enviando factura: {e}")
         return False
 
+
+def enviar_bienvenida(email_destino: str, nombre: str):
+    mensaje = MIMEMultipart("alternative")
+    mensaje["Subject"] = "¡Bienvenido a PriceCompare! 🎉"
+    mensaje["From"] = MAIL_FROM
+    mensaje["To"] = email_destino
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 520px; margin: auto;">
+        <div style="background: #ff6b00; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">PriceCompare</h1>
+            <p style="color: white; margin: 6px 0 0; font-size: 14px;">Compara precios, ahorra más</p>
+        </div>
+        <div style="padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+            <h2>¡Hola, {nombre}! 👋</h2>
+            <p>Tu cuenta ha sido creada exitosamente. Ahora puedes comparar precios entre las mejores tiendas de Colombia.</p>
+
+            <!-- Planes -->
+            <h3 style="color: #ff6b00; margin-top: 28px;">📦 Nuestros planes</h3>
+
+            <!-- Plan Gratuito -->
+            <div style="border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; font-size:15px;">👤 Plan Gratuito</span>
+                    <span style="font-weight:700; color:#64748b;">$0 / mes</span>
+                </div>
+                <ul style="color:#555; font-size:13px; margin:10px 0 0; padding-left:18px; line-height:1.8;">
+                    <li>5 comparaciones por mes</li>
+                    <li>5 productos favoritos</li>
+                    <li>Historial de búsquedas (10 entradas)</li>
+                </ul>
+            </div>
+
+            <!-- Plan Básico -->
+            <div style="border: 1.5px solid #f59e0b; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; font-size:15px;">⭐ Plan Básico</span>
+                    <span style="font-weight:700; color:#f59e0b;">$19.900 / mes</span>
+                </div>
+                <ul style="color:#555; font-size:13px; margin:10px 0 0; padding-left:18px; line-height:1.8;">
+                    <li>20 comparaciones por mes</li>
+                    <li>50 productos favoritos</li>
+                    <li>Historial ilimitado</li>
+                    <li>3 alertas de precio</li>
+                </ul>
+            </div>
+
+            <!-- Plan Pro -->
+            <div style="border: 1.5px solid #0ea5e9; border-radius: 10px; padding: 16px; margin-bottom: 24px; background:#f0f9ff;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; font-size:15px;">💎 Plan Pro</span>
+                    <span style="font-weight:700; color:#0ea5e9;">$39.900 / mes</span>
+                </div>
+                <ul style="color:#555; font-size:13px; margin:10px 0 0; padding-left:18px; line-height:1.8;">
+                    <li>Comparaciones ilimitadas</li>
+                    <li>Favoritos ilimitados</li>
+                    <li>Historial ilimitado</li>
+                    <li>Alertas ilimitadas</li>
+                </ul>
+            </div>
+
+            <div style="text-align:center;">
+                <a href="http://44.223.85.57/planes.html"
+                   style="background:#ff6b00; color:white; padding:12px 28px; border-radius:8px;
+                          text-decoration:none; font-size:15px; font-weight:600;">
+                    Ver planes →
+                </a>
+            </div>
+
+            <p style="color:#888; font-size:12px; margin-top:24px; text-align:center;">
+                Si no fuiste tú quien se registró, ignora este correo.
+            </p>
+        </div>
+    </body></html>
+    """
+
+    mensaje.attach(MIMEText(html, "html"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.sendmail(MAIL_FROM, email_destino, mensaje.as_string())
+        return True
+    except Exception as e:
+        print(f"Error enviando bienvenida: {e}")
+        return False
+        
+        
+def enviar_cambio_email(email_destino: str, nombre: str):
+    mensaje = MIMEMultipart("alternative")
+    mensaje["Subject"] = "Tu correo fue actualizado - PriceCompare"
+    mensaje["From"] = MAIL_FROM
+    mensaje["To"] = email_destino
+
+    html = f"""
+    <html><body style="font-family: Arial, sans-serif; max-width: 520px; margin: auto;">
+        <div style="background: #ff6b00; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">PriceCompare</h1>
+        </div>
+        <div style="padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+            <h2>Hola, {nombre} 👋</h2>
+            <p>Tu correo electrónico ha sido actualizado exitosamente en PriceCompare.</p>
+            <div style="background: #fff3cd; border-left: 4px solid #ff6b00;
+                        padding: 12px 16px; border-radius: 0 8px 8px 0; color: #555;">
+                ⚠️ Si no fuiste tú quien hizo este cambio, contáctanos de inmediato.
+            </div>
+            <p style="color: #888; font-size: 13px; margin-top: 20px;">
+                Este correo es solo una notificación, no se requiere ninguna acción.
+            </p>
+        </div>
+    </body></html>
+    """
+    mensaje.attach(MIMEText(html, "html"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(MAIL_USERNAME, MAIL_PASSWORD)
+            server.sendmail(MAIL_FROM, email_destino, mensaje.as_string())
+        return True
+    except Exception as e:
+        print(f"Error enviando notificación de cambio de email: {e}")
+        return False

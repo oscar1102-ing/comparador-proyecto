@@ -77,9 +77,12 @@ def verificar_comparacion(usuario_id: int):
             cursor.execute("""
                 UPDATE usuarios SET comparaciones_mes = comparaciones_mes + 1 WHERE id = %s
             """, (usuario_id,))
+            cursor.execute("""
+                INSERT INTO historial_comparaciones (usuario_id, plan) VALUES (%s, %s)
+            """, (usuario_id, rol))
             conexion.commit()
             return {"permitido": True, "usadas": comparaciones_mes + 1, "limite": None}
- 
+
         # Si llegó al límite
         if comparaciones_mes >= limite:
             return {
@@ -93,6 +96,9 @@ def verificar_comparacion(usuario_id: int):
         cursor.execute("""
             UPDATE usuarios SET comparaciones_mes = comparaciones_mes + 1 WHERE id = %s
         """, (usuario_id,))
+        cursor.execute("""
+            INSERT INTO historial_comparaciones (usuario_id, plan) VALUES (%s, %s)
+        """, (usuario_id, rol))
         conexion.commit()
  
         return {
@@ -197,16 +203,12 @@ def obtener_info_plan(usuario_id: int):
         conexion.close()
         
     
-# ============================================
-# AGREGAR ESTA FUNCIÓN A TU plan_service.py
-# También agrega al inicio: from services import factura_service, email_service
-# ============================================
- 
+
 def solicitar_plan(usuario_id: int, plan: str):
-    # Normalizar
+
     plan = plan.strip().lower()
     
-    # Únicos planes válidos (sin 'usuario')
+
     planes_validos = ["basico", "pro", "usuario"]
     if plan not in planes_validos:
         return {"error": f"Plan inválido: '{plan}'. Válidos: {planes_validos}"}
@@ -220,11 +222,15 @@ def solicitar_plan(usuario_id: int, plan: str):
             return {"error": "Usuario no encontrado"}
         nombre, email, rol_actual = fila
         
+        if rol_actual in ("root", "admin"):
+            return {"error": "Los usuarios root no pueden cambiar su plan desde aquí."}
+        
+        
         if rol_actual == plan:
             nombres = {"basico": "Básico", "pro": "Pro", "usuario": "Gratuito"}
             return {"error": f"Ya tienes el {nombres[plan]} activo"}
         
-        # Factura y email (asegúrate de que estas funciones acepten 'gratuito')
+
         from services.factura_service import generar_factura_pdf
         from services.email_service import enviar_factura_plan
         pdf_bytes = generar_factura_pdf(nombre, email, plan)

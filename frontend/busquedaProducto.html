@@ -79,65 +79,53 @@
         <div class="overlay" id="overlay"></div>
 
         <aside class="panel-filtros" id="panelFiltros">
-
             <div class="filtros-header">
                 <h3>Filtros</h3>
                 <button id="cerrarFiltros">✕</button>
             </div>
 
             <div class="filtro">
-
                 <h4 class="toggle-filtro">Categoría +</h4>
-
                 <div class="contenido-filtro">
-
-                    <label><input type="checkbox" class="filtro-categoria" value="tecnologia"> Tecnología</label>
                     <label><input type="checkbox" class="filtro-categoria" value="celulares"> Celulares</label>
-                    <label><input type="checkbox" class="filtro-categoria" value="computadores"> Computadores</label>
-                    <label><input type="checkbox" class="filtro-categoria" value="electrodomesticos"> Electrodomésticos</label>
-                    <label><input type="checkbox" class="filtro-categoria" value="accesorios">Accesorios</label>
-
+                    <label><input type="checkbox" class="filtro-categoria" value="laptops"> Laptops</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="consolas"> Consolas</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="monitores"> Monitores</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="televisores"> Televisores</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="tablets"> Tablets</label>
+                    <label><input type="checkbox" class="filtro-categoria" value="audifonos"> Audífonos</label>
                 </div>
-
             </div>
 
             <div class="filtro">
-
                 <h4 class="toggle-filtro">Tiendas +</h4>
-
                 <div class="contenido-filtro">
-
-                    <label><input type="checkbox" class="filtro-tienda" value="amazon"> Amazon</label>
-                    <label><input type="checkbox" class="filtro-tienda" value="ebay"> eBay</label>
-                    <label><input type="checkbox" class="filtro-tienda" value="walmart"> Walmart</label>
-                    <label><input type="checkbox" class="filtro-tienda" value="bestbuy"> BestBuy</label>
-
+                    <label><input type="checkbox" class="filtro-tienda" value="Éxito"> Éxito</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="Alkosto"> Alkosto</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="Amazon"> Amazon</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="Mercado Libre"> Mercado Libre</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="Falabella"> Falabella</label>
+                    <label><input type="checkbox" class="filtro-tienda" value="Linio"> Linio</label>
                 </div>
-
             </div>
 
             <div class="filtro">
-
                 <h4 class="toggle-filtro">Precio +</h4>
-
                 <div class="contenido-filtro">
-
                     <div class="precio-inputs">
-
                         <input type="number" id="precioMin" placeholder="Min">
-
                         <span>-</span>
-
                         <input type="number" id="precioMax" placeholder="Max">
-
                     </div>
-
                 </div>
-
             </div>
 
             <button class="aplicar-filtros">Aplicar filtros</button>
-
+            <button class="limpiar-filtros" style="margin-top:8px; width:100%; padding:10px;
+                    background:#f1f5f9; border:none; border-radius:8px; cursor:pointer;
+                    color:#64748b; font-size:14px;">
+                Limpiar filtros
+            </button>
         </aside>
 
         <script src="script.js"></script>

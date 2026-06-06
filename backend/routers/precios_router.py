@@ -19,9 +19,12 @@ router = APIRouter()
 
 # ── PRODUCTOS ──
 @router.get("/productos")
-def obtener_productos(q: str = "", categoria: str = "", pagina: int = 1, por_pagina: int = 10):
-    return precio_service.comparar_precios_producto(q, categoria, pagina, por_pagina)
-
+def obtener_productos(q: str = "", categoria: str = "", pagina: int = 1, 
+                      por_pagina: int = 10, tienda: str = "", 
+                      precio_min: str = "", precio_max: str = ""):
+    return precio_service.comparar_precios_producto(
+        q, categoria, pagina, por_pagina, tienda, precio_min, precio_max
+    )
 
 @router.get("/productos/top")
 def top_productos():
@@ -251,3 +254,206 @@ def obtener_usuario_por_id(usuario_id: int):
         "email": fila[2],
         "rol": fila[3]
     }
+    
+@router.get("/admin/estadisticas")
+def obtener_estadisticas():
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Usuarios por plan
+        cursor.execute("""
+            SELECT rol, COUNT(*) 
+            FROM usuarios 
+            GROUP BY rol 
+            ORDER BY COUNT(*) DESC
+        """)
+        usuarios_por_plan = [{"plan": r[0], "total": r[1]} for r in cursor.fetchall()]
+
+        # Comparaciones totales por plan
+        cursor.execute("""
+            SELECT rol, SUM(comparaciones_mes) as total_comparaciones
+            FROM usuarios
+            GROUP BY rol
+            ORDER BY total_comparaciones DESC
+        """)
+        comparaciones_por_plan = [{"plan": r[0], "total": int(r[1] or 0)} for r in cursor.fetchall()]
+
+        # Top usuarios por comparaciones
+        cursor.execute("""
+            SELECT nombre, rol, comparaciones_mes
+            FROM usuarios
+            ORDER BY comparaciones_mes DESC
+            LIMIT 5
+        """)
+        top_usuarios = [{"nombre": r[0], "plan": r[1], "comparaciones": r[2]} for r in cursor.fetchall()]
+
+        # Total comparaciones hoy
+        cursor.execute("SELECT SUM(comparaciones_mes) FROM usuarios")
+        total_comparaciones = int(cursor.fetchone()[0] or 0)
+
+        return {
+            "usuarios_por_plan": usuarios_por_plan,
+            "comparaciones_por_plan": comparaciones_por_plan,
+            "top_usuarios": top_usuarios,
+            "total_comparaciones": total_comparaciones,
+            "total_usuarios": sum(p["total"] for p in usuarios_por_plan)
+        }
+    finally:
+        cursor.close()
+        conexion.close()
+        
+@router.get("/admin/estadisticas/tiempo")
+def estadisticas_tiempo():
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Comparaciones por día (últimos 30 días)
+        cursor.execute("""
+            SELECT DATE(fecha) as dia, COUNT(*) as total, plan
+            FROM historial_comparaciones
+            WHERE fecha >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(fecha), plan
+            ORDER BY dia ASC
+        """)
+        por_dia = [{"dia": str(r[0]), "total": r[1], "plan": r[2]} for r in cursor.fetchall()]
+
+        # Comparaciones por mes (últimos 6 meses)
+        cursor.execute("""
+            SELECT TO_CHAR(fecha, 'YYYY-MM') as mes, COUNT(*) as total, plan
+            FROM historial_comparaciones
+            WHERE fecha >= NOW() - INTERVAL '6 months'
+            GROUP BY TO_CHAR(fecha, 'YYYY-MM'), plan
+            ORDER BY mes ASC
+        """)
+        por_mes = [{"mes": r[0], "total": r[1], "plan": r[2]} for r in cursor.fetchall()]
+
+        # Nuevos usuarios por día (últimos 30 días)
+        cursor.execute("""
+            SELECT DATE(fecha_registro) as dia, rol, COUNT(*) as total
+            FROM usuarios
+            WHERE fecha_registro >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(fecha_registro), rol
+            ORDER BY dia ASC
+        """)
+        usuarios_por_dia = [{"dia": str(r[0]), "plan": r[1], "total": r[2]} for r in cursor.fetchall()]
+
+        return {
+            "comparaciones_por_dia": por_dia,
+            "comparaciones_por_mes": por_mes,
+            "usuarios_por_dia": usuarios_por_dia
+        }
+    finally:
+        cursor.close()
+        conexion.close()
+        
+@router.put("/usuarios/{usuario_id}/actualizar")
+def actualizar_perfil(usuario_id: int, datos: dict):
+    resultado = usuario_service.actualizar_perfil(usuario_id, datos)
+    if "error" in resultado:
+        raise HTTPException(status_code=400, detail=resultado["error"])
+    return resultado
+    
+    
+@router.post("/fidelizacion/aplicar")
+def aplicar_fidelizacion(datos: dict):
+    """
+    Sube el plan del usuario como oferta de fidelización.
+    - Si el usuario no tiene plan (rol='usuario') → lo pone en 'basico'
+    - Si ya tiene plan pago → lo sube al siguiente nivel
+    Jerarquía: usuario → basico → premium → pro
+    """
+    usuario_id = datos.get("usuario_id")
+    plan_destino = datos.get("plan")
+ 
+    if not usuario_id or not plan_destino:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+ 
+    planes_validos = ["usuario", "basico", "pro"]
+    if plan_destino not in planes_validos:
+        raise HTTPException(status_code=400, detail="Plan inválido")
+ 
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Verificar que el usuario existe
+        cursor.execute("SELECT id, rol FROM usuarios WHERE id = %s", (usuario_id,))
+        fila = cursor.fetchone()
+        if not fila:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+ 
+        rol_actual = fila[1]
+        indice_actual = planes_validos.index(rol_actual) if rol_actual in planes_validos else 0
+        indice_destino = planes_validos.index(plan_destino)
+ 
+        # Validar que el plan destino es realmente una subida
+        if indice_destino <= indice_actual:
+            raise HTTPException(status_code=400, detail="El plan destino no es superior al actual")
+ 
+        # Aplicar el nuevo plan
+        cursor.execute(
+            "UPDATE usuarios SET rol = %s WHERE id = %s",
+            (plan_destino, usuario_id)
+        )
+        conexion.commit()
+ 
+        return {
+            "mensaje": "Plan actualizado exitosamente",
+            "plan_anterior": rol_actual,
+            "plan_nuevo": plan_destino
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        conexion.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    finally:
+        cursor.close()
+        conexion.close()
+ 
+ 
+@router.delete("/usuarios/{usuario_id}/cancelar")
+def cancelar_cuenta(usuario_id: int):
+    """
+    Elimina completamente la cuenta del usuario:
+    favoritos, historial de búsquedas, historial de comparaciones y finalmente el usuario.
+    """
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+
+        cursor.execute("SELECT id FROM usuarios WHERE id = %s", (usuario_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+ 
+
+        cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
+        cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
+ 
+
+        try:
+            cursor.execute(
+                "DELETE FROM historial_comparaciones WHERE usuario_id = %s", (usuario_id,)
+            )
+        except Exception:
+            conexion.rollback()
+
+            cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
+            cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
+ 
+        # Eliminar el usuario
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
+        conexion.commit()
+ 
+        return {"mensaje": "Cuenta eliminada exitosamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conexion.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al eliminar cuenta: {str(e)}")
+    finally:
+        cursor.close()
+        conexion.close()

@@ -1,11 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
+
+    document.addEventListener("DOMContentLoaded", () => {
+    verificarSesionActiva();
     cargarProductos();
     cargarTop();
     cargarDetalle();
     actualizarHeader();
+ 
     
     
-
+ 
     // Carrusel
     document.querySelectorAll(".comparacion").forEach(carrusel => {
         const items = carrusel.querySelectorAll(".tienda");
@@ -25,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
         carrusel.addEventListener("mouseenter", detenerCarrusel);
         carrusel.addEventListener("mouseleave", iniciarCarrusel);
     });
-
+ 
     // Panel filtros
     const btnFiltros = document.querySelector(".btn-filtros");
     const panelFiltros = document.getElementById("panelFiltros");
@@ -43,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
             overlay.classList.remove("activo");
         }
     }
-
+ 
     // Toggle filtros
     document.querySelectorAll(".toggle-filtro").forEach(toggle => {
         toggle.addEventListener("click", () => {
@@ -57,19 +60,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
-
-    // Aplicar filtros
-    const aplicarFiltros = document.querySelector(".aplicar-filtros");
-    if (aplicarFiltros) {
-        aplicarFiltros.addEventListener("click", () => {
-            const nuevaURL = new URL(window.location);
-            nuevaURL.searchParams.delete("categoria");
-            window.history.replaceState({}, "", nuevaURL);
-            cargarProductos(1);
-        });
-    }
+ 
 });
-
+ 
 // ── UTILIDADES ──
 function formatearPrecio(precio) {
     return precio.toLocaleString('es-CO', {
@@ -78,7 +71,7 @@ function formatearPrecio(precio) {
         minimumFractionDigits: 0
     });
 }
-
+ 
 function obtenerUsuarioActual() {
     const token = localStorage.getItem("token");
     if (!token) return null;
@@ -90,9 +83,9 @@ function obtenerUsuarioActual() {
         return null;
     }
 }
-
-
-
+ 
+ 
+ 
 function manejarGratis() {
     const u = obtenerUsuarioActual();
     if (!u) {
@@ -103,24 +96,27 @@ function manejarGratis() {
         solicitarPlan("usuario", document.getElementById("btn-gratis"));
     }
 }
-
-
+ 
+ 
 // ── PAGINACIÓN ──
 let paginaActual = 1;
 let totalPaginas = 1;
 let busquedaActual = "";
-
+ 
 async function cargarProductos(pagina = 1) {
-
+ 
     const params = new URLSearchParams(window.location.search);
     busquedaActual = params.get("q") || "";
     const categoriaActual = params.get("categoria") || "";
-
+    const tiendaActual = params.get("tienda") || "";
+    const precioMin = params.get("precio_min") || "";
+    const precioMax = params.get("precio_max") || "";
+ 
     const contenedor = document.getElementById("lista-productos");
     if (!contenedor) return;
-
+ 
     contenedor.innerHTML = "<p>Cargando productos...</p>";
-
+ 
     // Actualizar texto búsqueda
     const textoBusqueda = document.getElementById("texto-busqueda");
     if (textoBusqueda) {
@@ -128,7 +124,7 @@ async function cargarProductos(pagina = 1) {
             ? categoriaActual.charAt(0).toUpperCase() + categoriaActual.slice(1)
             : busquedaActual ? `"${busquedaActual}"` : "Todos los productos";
     }
-
+ 
     const usuario = obtenerUsuarioActual();
     if (usuario && busquedaActual.trim() && pagina === 1) {
         fetch("/api/historial/guardar", {
@@ -137,29 +133,31 @@ async function cargarProductos(pagina = 1) {
             body: JSON.stringify({ usuario_id: usuario.id, busqueda: busquedaActual })
         }).catch(() => {});
     }
-
+ 
     try {
-        const response = await fetch(`/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&pagina=${pagina}&por_pagina=10`);
+        const response = await fetch(
+        `/api/productos?q=${busquedaActual}&categoria=${categoriaActual}&tienda=${tiendaActual}&precio_min=${precioMin}&precio_max=${precioMax}&pagina=${pagina}&por_pagina=10`
+    );
         const data = await response.json();
-
+ 
         paginaActual = data.pagina;
         totalPaginas = data.total_paginas;
-
+ 
         // Actualizar cantidad
         const cantidadResultados = document.getElementById("cantidad-resultados");
         if (cantidadResultados) {
             cantidadResultados.textContent = `${data.total} productos encontrados`;
         }
-
+ 
         contenedor.innerHTML = "";
-
+ 
         if (data.productos.length === 0) {
             contenedor.innerHTML = "<p>No se encontraron productos</p>";
             const pag = document.getElementById("paginacion");
             if (pag) pag.innerHTML = "";
             return;
         }
-
+ 
         data.productos.forEach(prod => {
             const estaLogueado = obtenerUsuarioActual();
             const botonFavorito = estaLogueado ? `
@@ -169,37 +167,38 @@ async function cargarProductos(pagina = 1) {
                            border-radius:4px; cursor:pointer; margin-top:8px; font-size:14px;">
                     ⭐ Favorito
                 </button>` : '';
-
+ 
             contenedor.innerHTML += `
                 <article class="producto-busqueda">
                     <img src="${(prod.imagen && prod.imagen !== 'null') ? prod.imagen : 'imagenes/logo1.png'}"
-                         alt="producto" style="width:100px; height:100px; object-fit:contain;">
+     alt="producto">
                     <div class="info-producto-busqueda">
                         <h3>${prod.nombre}</h3>
                         <p class="precio">${formatearPrecio(prod.precio)}</p>
                         <p>${prod.tienda}</p>
-                        <a href="producto.html?nombre=${prod.nombre}">Ver producto</a>
+                        
+                        <a href="producto.html?nombre=${encodeURIComponent(prod.nombre)}">Ver producto</a>
                         ${botonFavorito}
                     </div>
                 </article>
             `;
         });
-
+ 
         renderizarPaginacion();
-
+ 
     } catch (error) {
         console.error("Error completo:", error);
         console.error("Mensaje:", error.message);
         contenedor.innerHTML = "<p>Error al cargar productos</p>";
     }
 }
-
+ 
 function renderizarPaginacion() {
     const contenedor = document.getElementById("paginacion");
     if (!contenedor) return;
     contenedor.innerHTML = "";
     if (totalPaginas <= 1) return;
-
+ 
     const btnAnterior = document.createElement("button");
     btnAnterior.textContent = "← Anterior";
     btnAnterior.disabled = paginaActual === 1;
@@ -208,12 +207,12 @@ function renderizarPaginacion() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
     contenedor.appendChild(btnAnterior);
-
+ 
     const indicador = document.createElement("span");
     indicador.textContent = `Página ${paginaActual} de ${totalPaginas}`;
     indicador.style.cssText = "padding: 0 16px; font-size: 14px; color: #64748b;";
     contenedor.appendChild(indicador);
-
+ 
     const btnSiguiente = document.createElement("button");
     btnSiguiente.textContent = "Siguiente →";
     btnSiguiente.disabled = paginaActual === totalPaginas;
@@ -223,7 +222,7 @@ function renderizarPaginacion() {
     };
     contenedor.appendChild(btnSiguiente);
 }
-
+ 
 // ── TOP PRODUCTOS ──
 async function cargarTop() {
     const contenedor = document.getElementById("productos-top");
@@ -243,61 +242,96 @@ async function cargarTop() {
         `;
     });
 }
-
+ 
 // ── DETALLE PRODUCTO ──
 async function cargarDetalle() {
     const params = new URLSearchParams(window.location.search);
-    const nombre = params.get("nombre");
-    if (!nombre) return;
-
-    const res = await fetch(`/api/producto?nombre=${nombre}`);
-    const data = await res.json();
-
-    document.getElementById("nombre").innerText = data.producto.nombre;
-    document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
-
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-    const contenedorInfo = document.querySelector(".info-producto");
-    if (usuario && contenedorInfo && data.producto.id) {
-        contenedorInfo.innerHTML += `
-            <button id="fav-detalle"
-                onclick="agregarFavorito(${data.producto.id}, '${data.producto.nombre}', 'fav-detalle')"
-                style="background:#ff6b00; color:white; border:none; padding:10px 20px;
-                       border-radius:6px; cursor:pointer; margin-top:12px; font-size:15px;">
-                ⭐ Favorito
-            </button>
-        `;
+    let nombre = params.get("nombre");
+ 
+    // 🔥 Si el nombre es un objeto (ej: [object HTMLHeadingElement])
+    if (nombre && typeof nombre === 'object') {
+        nombre = nombre.textContent || nombre.innerText || '';
     }
-
-    const tiendasDiv = document.getElementById("tiendas");
-    tiendasDiv.innerHTML = "";
-    data.tiendas.forEach(t => {
-        tiendasDiv.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; 
-                        padding:10px; border-bottom:1px solid #eee;">
-                <span>${t.tienda}</span>
-                <span class="precio">${formatearPrecio(t.precio)}</span>
-                ${t.url ? `<a href="${t.url}" target="_blank" 
-                    style="background:#ff7a00; color:white; padding:8px 14px; 
-                    border-radius:5px; text-decoration:none; font-size:14px;">
-                    Comprar →</a>` : ''}
-            </div>
-        `;
-    });
-
-    const similaresDiv = document.getElementById("similares");
-    similaresDiv.innerHTML = "";
-    data.similares.forEach(s => {
-        similaresDiv.innerHTML += `
-            <div>
-                <h4>${s.nombre}</h4>
-                <p>${formatearPrecio(s.precio)}</p>
-                <a href="producto.html?nombre=${s.nombre}">Ver</a>
-            </div>
-        `;
-    });
+    // Si es un string que parece un objeto serializado
+    if (typeof nombre === 'string' && (nombre.startsWith('[object') || nombre === 'null')) {
+        console.error('Nombre inválido:', nombre);
+        document.getElementById("nombre").innerText = "Producto no válido";
+        document.getElementById("precio-principal").innerText = "$0";
+        document.getElementById("tiendas").innerHTML = "<p>Error en el enlace.</p>";
+        document.getElementById("similares").innerHTML = "<p>No se pudo cargar.</p>";
+        return;
+    }
+    if (!nombre) return;
+ 
+    try {
+        const res = await fetch(`/api/producto?nombre=${encodeURIComponent(nombre)}`);
+        const data = await res.json();
+ 
+        if (!data || !data.producto) {
+            console.error('Producto no encontrado:', nombre);
+            document.getElementById("nombre").innerText = "Producto no encontrado";
+            document.getElementById("precio-principal").innerText = "$0";
+            document.getElementById("tiendas").innerHTML = "<p>No hay información disponible.</p>";
+            document.getElementById("similares").innerHTML = "<p>No se encontraron similares.</p>";
+            return;
+        }
+ 
+        // ✅ Resto del código original (mostrar producto, tiendas, similares, etc.)
+        document.getElementById("nombre").innerText = data.producto.nombre;
+        document.getElementById("imagen").src = data.producto.imagen || 'imagenes/logo1.png';
+ 
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+        const contenedorInfo = document.querySelector(".info-producto");
+        if (usuario && contenedorInfo && data.producto.id) {
+            contenedorInfo.innerHTML += `
+                <button id="fav-detalle"
+                    onclick="agregarFavorito(${data.producto.id}, '${data.producto.nombre}', 'fav-detalle')"
+                    style="background:#ff6b00; color:white; border:none; padding:10px 20px;
+                           border-radius:6px; cursor:pointer; margin-top:12px; font-size:15px;">
+                    ⭐ Favorito
+                </button>
+            `;
+        }
+ 
+        const tiendasDiv = document.getElementById("tiendas");
+        tiendasDiv.innerHTML = "";
+        data.tiendas.forEach(t => {
+            tiendasDiv.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; 
+                            padding:10px; border-bottom:1px solid #eee;">
+                    <span>${t.tienda}</span>
+                    <span class="precio">${formatearPrecio(t.precio)}</span>
+                    ${t.url ? `<a href="${t.url}" target="_blank" 
+                        style="background:#ff7a00; color:white; padding:8px 14px; 
+                        border-radius:5px; text-decoration:none; font-size:14px;">
+                        Comprar →</a>` : ''}
+                </div>
+            `;
+        });
+ 
+        const similaresDiv = document.getElementById("similares");
+        similaresDiv.innerHTML = "";
+        data.similares.forEach(s => {
+            // Protección adicional: si s.nombre es objeto, extraer texto
+            let nombreSimilar = s.nombre;
+            if (nombreSimilar && typeof nombreSimilar === 'object') {
+                nombreSimilar = nombreSimilar.textContent || nombreSimilar.innerText || '';
+            }
+            similaresDiv.innerHTML += `
+                <div>
+                    <h4>${nombreSimilar}</h4>
+                    <p>${formatearPrecio(s.precio)}</p>
+                    <a href="producto.html?nombre=${encodeURIComponent(nombreSimilar)}">Ver</a>
+                </div>
+            `;
+        });
+ 
+    } catch (err) {
+        console.error("Error cargando detalle:", err);
+        document.getElementById("nombre").innerText = "Error al cargar";
+    }
 }
-
+ 
 // ── HEADER ──
 function actualizarHeader() {
     const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -306,25 +340,55 @@ function actualizarHeader() {
     if (usuario) {
         const esAdmin = usuario.rol === "admin" || usuario.rol === "root";
         authDiv.innerHTML = `
-            <span class="btn-auth">Hola, ${usuario.nombre}</span>
-            ${esAdmin ? '<a href="admin.html" class="btn-auth" style="background:#1e293b;">⚙️ Admin</a>' : ''}
-            <a href="dashboard.html" class="btn-auth">Mi cuenta</a>
-            <button class="btn-auth" onclick="cerrarSesion()">Salir</button>
+            <span class="btn-auth btn-saludo">Hola, ${usuario.nombre}</span>
+            <a href="planes.html" class="btn-auth btn-planes">💎 Planes</a>
+            <button class="btn-auth btn-cancelar-cuenta" onclick="mostrarModalCancelacion()"
+                style="background:#fff0f0; color:#dc2626; border:1.5px solid #fecaca;
+                       padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px;
+                       font-weight:600; transition:background 0.2s;"
+                onmouseover="this.style.background='#fee2e2'"
+                onmouseout="this.style.background='#fff0f0'">
+                fidelizacion
+            </button>
+            ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
+            <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
+            <button class="btn-auth btn-salir" onclick="cerrarSesion()">Salir</button>
         `;
     } else {
         authDiv.innerHTML = `
+            <a href="planes.html" class="btn-auth" style="background:#f1f5f9; color:#ff6b00;">💎 Planes</a>
             <a href="login.html" class="btn-auth">Ingresar</a>
             <a href="registrar.html" class="btn-auth">Registro</a>
         `;
     }
 }
-
+ 
 function cerrarSesion() {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
     window.location.href = "/index.html";
 }
-
+ 
+async function verificarSesionActiva() {
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+    if (!usuario) return;
+    
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.id}`);
+        const data = await res.json();
+        
+        // Si el rol cambió, actualizar localStorage
+        if (data.rol !== usuario.rol) {
+            usuario.rol = data.rol;
+            localStorage.setItem("usuario", JSON.stringify(usuario));
+            // Recargar para aplicar cambios
+            window.location.reload();
+        }
+    } catch (e) {
+        console.error("Error verificando sesión:", e);
+    }
+}
+ 
 // ── FAVORITOS (actualizado con límite) ──
 async function agregarFavorito(productoId, nombreProducto, botonId) {
     const boton = document.getElementById(botonId);
@@ -368,20 +432,20 @@ async function agregarFavorito(productoId, nombreProducto, botonId) {
         mostrarToast("Error de conexión", "error");
     }
 }
-
-
+ 
+ 
 // ── TOAST ──
 function mostrarToast(mensaje, tipo = "success") {
     const anterior = document.getElementById("toast-favorito");
     if (anterior) anterior.remove();
-
+ 
     const colores = {
         success: { bg: "#22c55e", icon: "✅" },
         info:    { bg: "#f59e0b", icon: "ℹ️" },
         error:   { bg: "#ef4444", icon: "❌" }
     };
     const { bg, icon } = colores[tipo] || colores.success;
-
+ 
     const toast = document.createElement("div");
     toast.id = "toast-favorito";
     toast.textContent = `${icon} ${mensaje}`;
@@ -403,8 +467,8 @@ function mostrarToast(mensaje, tipo = "success") {
         setTimeout(() => toast.remove(), 300);
     }, 2500);
 }
-
-
+ 
+ 
 // ── COMPARACION (nuevo) ──
 let dataTiendasGlobal = [];
  
@@ -445,7 +509,7 @@ async function inicializarComparacion(tiendas) {
         }
     } catch (_) {}
 }
-
+ 
 async function verComparacion() {
     const usuario = obtenerUsuarioActual();
     if (!usuario) { window.location.href = "/login.html"; return; }
@@ -514,7 +578,7 @@ async function verComparacion() {
 }
  
 // ── MAPA (restricción visitantes) ──
-
+ 
 function inicializarMapa(tiendas) {
     const usuario = obtenerUsuarioActual();
     if (!usuario) {
@@ -526,7 +590,7 @@ function inicializarMapa(tiendas) {
     document.getElementById("mapa-con-cuenta").style.display = "block";
     if (tiendas.length > 0) cargarMapaTiendas(tiendas);
 }
-
+ 
  
 // ── MODAL DE LÍMITE ──
 function mostrarModalLimite(tipo, limite) {
@@ -578,3 +642,440 @@ function mostrarModalLimite(tipo, limite) {
     });
     document.body.appendChild(modal);
 }
+ 
+function toggleEditarPerfil() {
+    const seccion = document.getElementById("seccion-editar");
+    const btn = document.getElementById("btn-toggle-editar");
+    const visible = seccion.style.display !== "none";
+    seccion.style.display = visible ? "none" : "block";
+    btn.textContent = visible ? "✏️ Editar perfil" : "✕ Cancelar edición";
+ 
+    if (!visible) {
+        // Prellenar con datos actuales
+        document.getElementById("edit-nombre").value = usuario.nombre || "";
+        document.getElementById("edit-email").value = usuario.email || "";
+ 
+    }
+}
+ 
+async function guardarPerfil() {
+    const nuevoNombre = document.getElementById("edit-nombre").value.trim();
+    const nuevoEmail = document.getElementById("edit-email").value.trim();
+ 
+    if (!nuevoNombre || !nuevoEmail) {
+        mostrarToast("Nombre y correo son obligatorios", "error");
+        return;
+    }
+ 
+    const emailCambio = nuevoEmail !== usuario.email;
+ 
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.id}/actualizar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                nombre: nuevoNombre,
+                email: nuevoEmail,
+                
+            })
+        });
+ 
+        const data = await res.json();
+ 
+        if (!res.ok) {
+            mostrarToast(data.detail || "Error al guardar", "error");
+            return;
+        }
+ 
+        // Actualizar localStorage
+        usuario.nombre = nuevoNombre;
+        usuario.email = nuevoEmail;
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+ 
+        // Actualizar UI
+        document.getElementById("dash-nombre").textContent = nuevoNombre;
+        document.getElementById("dash-email").textContent = nuevoEmail;
+ 
+        if (emailCambio) {
+            mostrarToast("Datos guardados. Revisa tu correo para verificar el nuevo email.", "info");
+        } else {
+            mostrarToast("Perfil actualizado correctamente", "success");
+        }
+ 
+        toggleEditarPerfil(); // cerrar sección
+ 
+    } catch (err) {
+        mostrarToast("Error de conexión", "error");
+    }
+}
+ 
+// ── CANCELACIÓN Y FIDELIZACIÓN ──
+ 
+/**
+ * Paso 1: El botón "Cancelar cuenta" en el header/planes abre este modal.
+ * Muestra dos opciones: cancelar definitivamente o fidelizar.
+ */
+function mostrarModalCancelacion() {
+    const anterior = document.getElementById("modal-cancelacion");
+    if (anterior) anterior.remove();
+ 
+    const modal = document.createElement("div");
+    modal.id = "modal-cancelacion";
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; border-radius:18px; padding:36px 32px; max-width:420px;
+                    width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+            <div style="font-size:52px; margin-bottom:10px;">😢</div>
+            <h3 style="margin:0 0 8px; font-size:20px; color:#1a1a1a; font-weight:700;">
+                ¿Quieres irte?
+            </h3>
+            <p style="color:#64748b; font-size:14px; margin:0 0 28px; line-height:1.5;">
+                Antes de que te vayas, tenemos una oferta especial para ti.<br>
+                ¿Qué deseas hacer?
+            </p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button onclick="mostrarModalFidelizacion()"
+                    style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
+                           border:none; padding:14px; border-radius:12px; cursor:pointer;
+                           font-size:15px; font-weight:600; letter-spacing:0.3px;">
+                    🎁 Quiero una oferta especial
+                </button>
+                <button onclick="confirmarCancelacion()"
+                    style="background:#fff0f0; color:#dc2626; border:2px solid #fecaca;
+                           padding:13px; border-radius:12px; cursor:pointer;
+                           font-size:14px; font-weight:600;">
+                    ❌ Cancelar mi cuenta definitivamente
+                </button>
+                <button onclick="document.getElementById('modal-cancelacion').remove()"
+                    style="background:#f1f5f9; color:#64748b; border:none; padding:12px;
+                           border-radius:12px; cursor:pointer; font-size:14px;">
+                    Volver
+                </button>
+            </div>
+        </div>
+    `;
+    modal.addEventListener("click", e => {
+        if (e.target === modal) modal.remove();
+    });
+    document.body.appendChild(modal);
+}
+ 
+/**
+ * Paso 2a: El usuario elige fidelizarse → preguntamos si/no con los beneficios.
+ */
+function mostrarModalFidelizacion() {
+    const anterior = document.getElementById("modal-cancelacion");
+    if (anterior) anterior.remove();
+
+    const usuario = obtenerUsuarioActual();
+    const rolActual = usuario?.rol || "usuario";
+    const jerarquia = ["usuario", "basico", "pro"];
+    const indiceActual = Math.max(jerarquia.indexOf(rolActual), 0);
+
+    if (indiceActual >= jerarquia.length - 1) {
+        const modal = document.createElement("div");
+        modal.id = "modal-fidelizacion";
+        modal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; padding: 20px;
+        `;
+        modal.innerHTML = `
+            <div style="background:white; border-radius:18px; padding:36px 32px; max-width:420px;
+                        width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+                <div style="font-size:52px; margin-bottom:10px;">👑</div>
+                <h3 style="margin:0 0 8px; font-size:20px; color:#1a1a1a; font-weight:700;">
+                    ¡Ya tienes el mejor plan!
+                </h3>
+                <p style="color:#64748b; font-size:14px; margin:0 0 24px; line-height:1.5;">
+                    Eres usuario <strong>Pro</strong>, el plan más completo que tenemos.<br>
+                    ¿Seguro que quieres cancelar tu cuenta?
+                </p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button onclick="document.getElementById('modal-fidelizacion').remove()"
+                        style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
+                               border:none; padding:14px; border-radius:12px; cursor:pointer;
+                               font-size:15px; font-weight:600;">
+                        👑 Quedarme con mi plan Pro
+                    </button>
+                    <button onclick="confirmarCancelacion()"
+                        style="background:#fff0f0; color:#dc2626; border:2px solid #fecaca;
+                               padding:13px; border-radius:12px; cursor:pointer;
+                               font-size:14px; font-weight:600;">
+                        ❌ Cancelar mi cuenta de todas formas
+                    </button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+        document.body.appendChild(modal);
+        return;
+    }
+
+    const indiceSiguiente = indiceActual + 1;
+    const planDestino = jerarquia[indiceSiguiente];
+
+    const nombresPlan = {
+        usuario: "Gratuito",
+        basico: "Basico ($19.900/mes)",
+        pro: "Pro ($39.900/mes)"
+    };
+
+    const beneficiosPlan = {
+        basico:  ["50 comparaciones/mes", "20 favoritos", "Historial 30 días"],
+        premium: ["150 comparaciones/mes", "100 favoritos", "Historial ilimitado"],
+        pro:     ["Comparaciones ilimitadas", "Favoritos ilimitados", "Historial ilimitado", "Acceso prioritario"]
+    };
+
+    const beneficios = beneficiosPlan[planDestino] || beneficiosPlan.basico;
+    const listaBeneficios = beneficios.map(b => `<li style="margin:4px 0;">✅ ${b}</li>`).join("");
+
+    const modal = document.createElement("div");
+    modal.id = "modal-fidelizacion";
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; border-radius:18px; padding:36px 32px; max-width:440px;
+                    width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+            <div style="font-size:52px; margin-bottom:10px;">🎁</div>
+            <h3 style="margin:0 0 6px; font-size:20px; color:#1a1a1a; font-weight:700;">
+                ¡Oferta especial para ti!
+            </h3>
+            <p style="color:#64748b; font-size:14px; margin:0 0 4px;">
+                Como valoramos tu lealtad, te ofrecemos:
+            </p>
+            <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5); border:2px solid #ff6b00;
+                        border-radius:12px; padding:16px 20px; margin:16px 0 24px; text-align:left;">
+                <p style="margin:0 0 8px; font-weight:700; color:#ff6b00; font-size:16px;">
+                    Plan ${nombresPlan[planDestino]}
+                </p>
+                <ul style="margin:0; padding-left:0; list-style:none; color:#374151; font-size:14px;">
+                    ${listaBeneficios}
+                </ul>
+            </div>
+            <p style="color:#374151; font-size:14px; margin:0 0 24px; font-weight:500;">
+                ¿Deseas aceptar esta oferta y quedarte con nosotros?
+            </p>
+            <div style="display:flex; gap:12px; justify-content:center;">
+                <button onclick="aceptarFidelizacion('${planDestino}')"
+                    style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
+                           border:none; padding:13px 28px; border-radius:12px; cursor:pointer;
+                           font-size:15px; font-weight:600; flex:1;">
+                    ✅ Sí, me quedo
+                </button>
+                <button onclick="confirmarCancelacion()"
+                    style="background:#f1f5f9; color:#64748b; border:none; padding:13px 28px;
+                           border-radius:12px; cursor:pointer; font-size:14px; flex:1;">
+                    No, cancelar
+                </button>
+            </div>
+        </div>
+    `;
+    modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+/**
+ * Paso 2b: El usuario acepta la fidelización → llamamos al backend y actualizamos su plan.
+ */
+async function aceptarFidelizacion(planDestino) {
+    const modal = document.getElementById("modal-fidelizacion");
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) { window.location.href = "/login.html"; return; }
+
+    if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = true);
+
+    try {
+        const res = await fetch("/api/fidelizacion/aplicar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario_id: usuario.id, plan: planDestino })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            mostrarToast(data.detail || "Error al aplicar fidelización", "error");
+            if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = false);
+            return;
+        }
+
+        // Actualizar rol en localStorage
+        usuario.rol = planDestino;
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+
+        if (modal) modal.remove();
+
+        const modalExito = document.createElement("div");
+        modalExito.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; padding: 20px;
+        `;
+        modalExito.innerHTML = `
+            <div style="background:white; border-radius:18px; padding:36px 32px; max-width:380px;
+                        width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+                <div style="font-size:56px; margin-bottom:10px;">🎉</div>
+                <h3 style="margin:0 0 8px; font-size:20px; color:#16a34a; font-weight:700;">
+                    ¡Bienvenido de vuelta!
+                </h3>
+                <p style="color:#64748b; font-size:14px; margin:0 0 24px; line-height:1.5;">
+                    Tu plan ha sido actualizado a <strong>${planDestino}</strong>.<br>
+                    Ya puedes disfrutar de todos tus beneficios.
+                </p>
+                <button id="btn-exito-fidelizacion"
+                    style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
+                           border:none; padding:13px 32px; border-radius:12px; cursor:pointer;
+                           font-size:15px; font-weight:600; width:100%;">
+                    ¡Entendido!
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modalExito);
+
+        document.getElementById("btn-exito-fidelizacion").addEventListener("click", () => {
+            modalExito.remove();
+            actualizarHeader();
+        });
+
+    } catch (err) {
+        mostrarToast("Error de conexión", "error");
+        if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = false);
+    }
+}
+ 
+/**
+ * Paso 3: El usuario confirma que quiere cancelar → modal de confirmación final.
+ */
+function confirmarCancelacion() {
+    const anterior = document.getElementById("modal-fidelizacion") || document.getElementById("modal-cancelacion");
+    if (anterior) anterior.remove();
+ 
+    const modal = document.createElement("div");
+    modal.id = "modal-confirmar-cancelacion";
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px;
+    `;
+    modal.innerHTML = `
+        <div style="background:white; border-radius:18px; padding:36px 32px; max-width:400px;
+                    width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+            <div style="font-size:52px; margin-bottom:10px;">⚠️</div>
+            <h3 style="margin:0 0 8px; font-size:20px; color:#dc2626; font-weight:700;">
+                Esta acción es irreversible
+            </h3>
+            <p style="color:#64748b; font-size:14px; margin:0 0 8px; line-height:1.5;">
+                Se eliminarán permanentemente:
+            </p>
+            <ul style="color:#374151; font-size:13px; text-align:left; margin:0 0 24px;
+                       padding-left:20px; line-height:1.8;">
+                <li>Tu cuenta y datos personales</li>
+                <li>Tu historial de búsquedas</li>
+                <li>Todos tus favoritos</li>
+                <li>Tu plan y comparaciones</li>
+            </ul>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="btn-cancelar-definitivo"
+                    onclick="ejecutarCancelacionCuenta()"
+                    style="background:#dc2626; color:white; border:none; padding:13px;
+                           border-radius:12px; cursor:pointer; font-size:14px; font-weight:600;">
+                    Sí, eliminar mi cuenta
+                </button>
+                <button onclick="document.getElementById('modal-confirmar-cancelacion').remove()"
+                    style="background:#f1f5f9; color:#64748b; border:none; padding:12px;
+                           border-radius:12px; cursor:pointer; font-size:14px;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    `;
+    modal.addEventListener("click", e => {
+        if (e.target === modal) modal.remove();
+    });
+    document.body.appendChild(modal);
+}
+ 
+/**
+ * Paso 4: Elimina la cuenta en el backend y hace logout.
+ */
+async function ejecutarCancelacionCuenta() {
+    const usuario = obtenerUsuarioActual();
+    if (!usuario) { window.location.href = "/index.html"; return; }
+ 
+    const btn = document.getElementById("btn-cancelar-definitivo");
+    if (btn) { btn.disabled = true; btn.textContent = "Eliminando..."; }
+ 
+    try {
+        const res = await fetch(`/api/usuarios/${usuario.id}/cancelar`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        });
+ 
+        if (!res.ok) {
+            const data = await res.json();
+            mostrarToast(data.detail || "Error al cancelar cuenta", "error");
+            if (btn) { btn.disabled = false; btn.textContent = "Sí, eliminar mi cuenta"; }
+            return;
+        }
+ 
+        // Logout y redirigir
+        localStorage.removeItem("token");
+        localStorage.removeItem("usuario");
+        window.location.href = "/index.html";
+ 
+    } catch (err) {
+        mostrarToast("Error de conexión", "error");
+        if (btn) { btn.disabled = false; btn.textContent = "Sí, eliminar mi cuenta"; }
+    }
+}
+ 
+// ── FILTROS (delegación de eventos) ──
+document.addEventListener("click", (e) => {
+    if (e.target.matches(".aplicar-filtros")) {
+        const categorias = [...document.querySelectorAll(".filtro-categoria:checked")]
+            .map(c => c.value);
+        const tiendas = [...document.querySelectorAll(".filtro-tienda:checked")]
+            .map(t => t.value);
+        const precioMin = document.getElementById("precioMin")?.value || "";
+        const precioMax = document.getElementById("precioMax")?.value || "";
+ 
+        const nuevaURL = new URL(window.location);
+        // DESPUÉS
+        nuevaURL.searchParams.delete("tienda");
+        nuevaURL.searchParams.delete("precio_min");
+        nuevaURL.searchParams.delete("precio_max");
+ 
+        if (categorias.length > 0) nuevaURL.searchParams.set("categoria", categorias.join(","));
+        if (tiendas.length > 0) nuevaURL.searchParams.set("tienda", tiendas.join(","));
+        if (precioMin) nuevaURL.searchParams.set("precio_min", precioMin);
+        if (precioMax) nuevaURL.searchParams.set("precio_max", precioMax);
+ 
+        window.history.replaceState({}, "", nuevaURL);
+        document.getElementById("panelFiltros")?.classList.remove("activo");
+        document.getElementById("overlay")?.classList.remove("activo");
+        cargarProductos(1);
+    }
+ 
+    if (e.target.matches(".limpiar-filtros")) {
+        document.querySelectorAll(".filtro-categoria, .filtro-tienda")
+            .forEach(c => c.checked = false);
+        const min = document.getElementById("precioMin");
+        const max = document.getElementById("precioMax");
+        if (min) min.value = "";
+        if (max) max.value = "";
+ 
+        const nuevaURL = new URL(window.location);
+        nuevaURL.searchParams.delete("categoria");
+        nuevaURL.searchParams.delete("tienda");
+        nuevaURL.searchParams.delete("precio_min");
+        nuevaURL.searchParams.delete("precio_max");
+        window.history.replaceState({}, "", nuevaURL);
+        cargarProductos(1);
+    }
+});

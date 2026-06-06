@@ -134,26 +134,43 @@ def cambiar_rol(id: int, nuevo_rol: str):
     roles_validos = ['usuario', 'basico', 'pro', 'admin', 'root']
     if nuevo_rol not in roles_validos:
         return {"error": f"Rol inválido. Opciones: {', '.join(roles_validos)}"}
- 
+
     from database import conectar_base
     conexion = conectar_base()
     cursor = conexion.cursor()
-    cursor.execute("SELECT es_root, rol FROM usuarios WHERE id = %s", (id,))
-    usuario = cursor.fetchone()
-    if not usuario:
-        cursor.close()
-        conexion.close()
-        return {"error": "Usuario no encontrado"}
-    if usuario[0] is True or usuario[1] == 'root':
-        cursor.close()
-        conexion.close()
-        return {"error": "No se puede modificar el rol del superusuario root"}
-    cursor.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (nuevo_rol, id))
-    conexion.commit()
-    cursor.close()
-    conexion.close()
-    return {"mensaje": f"Rol actualizado a {nuevo_rol}"}
+    try:
+        cursor.execute("SELECT es_root, rol FROM usuarios WHERE id = %s", (id,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            return {"error": "Usuario no encontrado"}
 
+        es_root_actual, rol_actual = usuario
+        
+        # No permitir promover a root desde la app
+        if nuevo_rol == 'root':
+            return {"error": "No se puede asignar rol root desde la aplicación. Solo desde la base de datos."}
+
+        # No se puede modificar un root existente desde la app
+        if es_root_actual is True or rol_actual == 'root':
+            return {"error": "No se puede modificar el rol del superusuario root"}
+
+        # Si se asigna root, es_root = TRUE; si no, FALSE
+        es_root_nuevo = nuevo_rol == "root"
+
+        cursor.execute("""
+            UPDATE usuarios 
+            SET rol = %s, es_root = %s 
+            WHERE id = %s
+        """, (nuevo_rol, es_root_nuevo, id))
+        conexion.commit()
+        return {"mensaje": f"Rol actualizado a {nuevo_rol}"}
+
+    except Exception as e:
+        conexion.rollback()
+        return {"error": str(e)}
+    finally:
+        cursor.close()
+        conexion.close()
 
 # ============================================
 # ACTIVAR MFA (marcar cuenta como activa)
