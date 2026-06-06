@@ -112,14 +112,14 @@ def obtener_producto(nombre: str):
     cursor = conexion.cursor()
 
     consulta = """
-    SELECT id, nombre, imagen_url
-    FROM productos
-    WHERE LOWER(REPLACE(nombre, ' ', '')) = %s
+    SELECT p.id, p.nombre, p.imagen_url, c.nombre AS categoria
+    FROM productos p
+    LEFT JOIN categorias c ON c.id = p.categoria_id
+    WHERE LOWER(p.nombre) LIKE %s
     LIMIT 1
     """
 
-    nombre_normalizado = nombre.lower().strip().replace(" ", "")
-    cursor.execute(consulta, (nombre_normalizado,))
+    cursor.execute(consulta, (f"%{nombre.lower()}%",))
     fila = cursor.fetchone()
 
     cursor.close()
@@ -131,7 +131,8 @@ def obtener_producto(nombre: str):
     return {
         "id": fila[0],
         "nombre": fila[1],
-        "imagen": fila[2] or "imagenes/logo1.png"
+        "imagen": fila[2] or "imagenes/logo1.png",
+        "categoria": fila[3] or "Producto"
     }
 
 
@@ -212,3 +213,41 @@ def actualizar_producto(id: int, datos):
     cursor.close()
     conexion.close()
     return {"mensaje": "Producto actualizado"}
+    
+    
+def obtener_tiendas_producto(nombre: str):
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+
+    consulta = """
+    SELECT 
+        t.nombre AS tienda,
+        pr.precio,
+        pr.url_producto AS url
+    FROM productos p
+    JOIN precios pr ON pr.producto_id = p.id
+    JOIN tiendas t ON t.id = pr.tienda_id
+    WHERE LOWER(p.nombre) LIKE %s
+    AND pr.fecha_actualizacion = (
+        SELECT MAX(pr2.fecha_actualizacion)
+        FROM precios pr2
+        WHERE pr2.producto_id = p.id
+        AND pr2.tienda_id = pr.tienda_id
+    )
+    ORDER BY pr.precio ASC
+    """
+
+    cursor.execute(consulta, (f"%{nombre.lower()}%",))
+    resultado = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    return [
+        {
+            "tienda": fila[0],
+            "precio": float(fila[1]),
+            "url": fila[2] or ""
+        }
+        for fila in resultado
+    ]

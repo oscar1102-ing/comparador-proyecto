@@ -1,4 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
+
+    document.addEventListener("DOMContentLoaded", () => {
     verificarSesionActiva();
     cargarProductos();
     cargarTop();
@@ -347,7 +348,7 @@ function actualizarHeader() {
                        font-weight:600; transition:background 0.2s;"
                 onmouseover="this.style.background='#fee2e2'"
                 onmouseout="this.style.background='#fff0f0'">
-                Cancelar cuenta
+                fidelizacion
             </button>
             ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
@@ -769,33 +770,70 @@ function mostrarModalCancelacion() {
 function mostrarModalFidelizacion() {
     const anterior = document.getElementById("modal-cancelacion");
     if (anterior) anterior.remove();
- 
+
     const usuario = obtenerUsuarioActual();
     const rolActual = usuario?.rol || "usuario";
- 
-    // Calcular el plan que recibirá
-    const jerarquia = ["usuario", "basico", "premium", "pro"];
-    const indiceActual = jerarquia.indexOf(rolActual);
-    // Si ya tiene plan pago → sube al siguiente; si no tiene (usuario) → le damos basico (39k)
-    const indiceSiguiente = Math.min(indiceActual + 1, jerarquia.length - 1);
+    const jerarquia = ["usuario", "basico", "pro"];
+    const indiceActual = Math.max(jerarquia.indexOf(rolActual), 0);
+
+    if (indiceActual >= jerarquia.length - 1) {
+        const modal = document.createElement("div");
+        modal.id = "modal-fidelizacion";
+        modal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; padding: 20px;
+        `;
+        modal.innerHTML = `
+            <div style="background:white; border-radius:18px; padding:36px 32px; max-width:420px;
+                        width:100%; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,0.25);">
+                <div style="font-size:52px; margin-bottom:10px;">👑</div>
+                <h3 style="margin:0 0 8px; font-size:20px; color:#1a1a1a; font-weight:700;">
+                    ¡Ya tienes el mejor plan!
+                </h3>
+                <p style="color:#64748b; font-size:14px; margin:0 0 24px; line-height:1.5;">
+                    Eres usuario <strong>Pro</strong>, el plan más completo que tenemos.<br>
+                    ¿Seguro que quieres cancelar tu cuenta?
+                </p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button onclick="document.getElementById('modal-fidelizacion').remove()"
+                        style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
+                               border:none; padding:14px; border-radius:12px; cursor:pointer;
+                               font-size:15px; font-weight:600;">
+                        👑 Quedarme con mi plan Pro
+                    </button>
+                    <button onclick="confirmarCancelacion()"
+                        style="background:#fff0f0; color:#dc2626; border:2px solid #fecaca;
+                               padding:13px; border-radius:12px; cursor:pointer;
+                               font-size:14px; font-weight:600;">
+                        ❌ Cancelar mi cuenta de todas formas
+                    </button>
+                </div>
+            </div>
+        `;
+        modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+        document.body.appendChild(modal);
+        return;
+    }
+
+    const indiceSiguiente = indiceActual + 1;
     const planDestino = jerarquia[indiceSiguiente];
- 
+
     const nombresPlan = {
         usuario: "Gratuito",
-        basico: "Básico ($39.000/mes)",
-        premium: "Premium ($79.000/mes)",
-        pro: "Pro ($149.000/mes)"
+        basico: "Basico ($19.900/mes)",
+        pro: "Pro ($39.900/mes)"
     };
- 
+
     const beneficiosPlan = {
         basico:  ["50 comparaciones/mes", "20 favoritos", "Historial 30 días"],
         premium: ["150 comparaciones/mes", "100 favoritos", "Historial ilimitado"],
         pro:     ["Comparaciones ilimitadas", "Favoritos ilimitados", "Historial ilimitado", "Acceso prioritario"]
     };
- 
+
     const beneficios = beneficiosPlan[planDestino] || beneficiosPlan.basico;
     const listaBeneficios = beneficios.map(b => `<li style="margin:4px 0;">✅ ${b}</li>`).join("");
- 
+
     const modal = document.createElement("div");
     modal.id = "modal-fidelizacion";
     modal.style.cssText = `
@@ -840,12 +878,9 @@ function mostrarModalFidelizacion() {
             </div>
         </div>
     `;
-    modal.addEventListener("click", e => {
-        if (e.target === modal) modal.remove();
-    });
+    modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
     document.body.appendChild(modal);
 }
- 
 /**
  * Paso 2b: El usuario acepta la fidelización → llamamos al backend y actualizamos su plan.
  */
@@ -853,12 +888,9 @@ async function aceptarFidelizacion(planDestino) {
     const modal = document.getElementById("modal-fidelizacion");
     const usuario = obtenerUsuarioActual();
     if (!usuario) { window.location.href = "/login.html"; return; }
- 
-    // Deshabilitar botones durante la petición
-    if (modal) {
-        modal.querySelectorAll("button").forEach(b => b.disabled = true);
-    }
- 
+
+    if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = true);
+
     try {
         const res = await fetch("/api/fidelizacion/aplicar", {
             method: "POST",
@@ -866,20 +898,19 @@ async function aceptarFidelizacion(planDestino) {
             body: JSON.stringify({ usuario_id: usuario.id, plan: planDestino })
         });
         const data = await res.json();
- 
+
         if (!res.ok) {
             mostrarToast(data.detail || "Error al aplicar fidelización", "error");
             if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = false);
             return;
         }
- 
+
         // Actualizar rol en localStorage
         usuario.rol = planDestino;
         localStorage.setItem("usuario", JSON.stringify(usuario));
- 
+
         if (modal) modal.remove();
- 
-        // Modal de éxito
+
         const modalExito = document.createElement("div");
         modalExito.style.cssText = `
             position: fixed; inset: 0; background: rgba(0,0,0,0.55);
@@ -894,10 +925,10 @@ async function aceptarFidelizacion(planDestino) {
                     ¡Bienvenido de vuelta!
                 </h3>
                 <p style="color:#64748b; font-size:14px; margin:0 0 24px; line-height:1.5;">
-                    Tu plan ha sido actualizado exitosamente.<br>
+                    Tu plan ha sido actualizado a <strong>${planDestino}</strong>.<br>
                     Ya puedes disfrutar de todos tus beneficios.
                 </p>
-                <button onclick="this.closest('div[style]').remove(); actualizarHeader();"
+                <button id="btn-exito-fidelizacion"
                     style="background:linear-gradient(135deg,#ff6b00,#ff9500); color:white;
                            border:none; padding:13px 32px; border-radius:12px; cursor:pointer;
                            font-size:15px; font-weight:600; width:100%;">
@@ -906,8 +937,12 @@ async function aceptarFidelizacion(planDestino) {
             </div>
         `;
         document.body.appendChild(modalExito);
-        actualizarHeader();
- 
+
+        document.getElementById("btn-exito-fidelizacion").addEventListener("click", () => {
+            modalExito.remove();
+            actualizarHeader();
+        });
+
     } catch (err) {
         mostrarToast("Error de conexión", "error");
         if (modal) modal.querySelectorAll("button").forEach(b => b.disabled = false);

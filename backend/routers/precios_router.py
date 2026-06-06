@@ -354,8 +354,8 @@ def actualizar_perfil(usuario_id: int, datos: dict):
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
-
-
+    
+    
 @router.post("/fidelizacion/aplicar")
 def aplicar_fidelizacion(datos: dict):
     """
@@ -370,7 +370,7 @@ def aplicar_fidelizacion(datos: dict):
     if not usuario_id or not plan_destino:
         raise HTTPException(status_code=400, detail="Faltan datos")
  
-    planes_validos = ["usuario", "basico", "premium", "pro"]
+    planes_validos = ["usuario", "basico", "pro"]
     if plan_destino not in planes_validos:
         raise HTTPException(status_code=400, detail="Plan inválido")
  
@@ -424,23 +424,23 @@ def cancelar_cuenta(usuario_id: int):
     conexion = conectar_base()
     cursor = conexion.cursor()
     try:
-        # Verificar que existe
+
         cursor.execute("SELECT id FROM usuarios WHERE id = %s", (usuario_id,))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
  
-        # Eliminar datos relacionados en orden para respetar FK
+
         cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
         cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
  
-        # historial_comparaciones puede no existir en todos los proyectos; ignorar si falla
+
         try:
             cursor.execute(
                 "DELETE FROM historial_comparaciones WHERE usuario_id = %s", (usuario_id,)
             )
         except Exception:
             conexion.rollback()
-            # Re-iniciar transacción sin la tabla opcional
+
             cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
             cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
  
