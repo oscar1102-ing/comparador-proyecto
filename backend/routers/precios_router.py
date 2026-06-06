@@ -354,3 +354,106 @@ def actualizar_perfil(usuario_id: int, datos: dict):
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
+
+
+@router.post("/fidelizacion/aplicar")
+def aplicar_fidelizacion(datos: dict):
+    """
+    Sube el plan del usuario como oferta de fidelización.
+    - Si el usuario no tiene plan (rol='usuario') → lo pone en 'basico'
+    - Si ya tiene plan pago → lo sube al siguiente nivel
+    Jerarquía: usuario → basico → premium → pro
+    """
+    usuario_id = datos.get("usuario_id")
+    plan_destino = datos.get("plan")
+ 
+    if not usuario_id or not plan_destino:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+ 
+    planes_validos = ["usuario", "basico", "premium", "pro"]
+    if plan_destino not in planes_validos:
+        raise HTTPException(status_code=400, detail="Plan inválido")
+ 
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Verificar que el usuario existe
+        cursor.execute("SELECT id, rol FROM usuarios WHERE id = %s", (usuario_id,))
+        fila = cursor.fetchone()
+        if not fila:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+ 
+        rol_actual = fila[1]
+        indice_actual = planes_validos.index(rol_actual) if rol_actual in planes_validos else 0
+        indice_destino = planes_validos.index(plan_destino)
+ 
+        # Validar que el plan destino es realmente una subida
+        if indice_destino <= indice_actual:
+            raise HTTPException(status_code=400, detail="El plan destino no es superior al actual")
+ 
+        # Aplicar el nuevo plan
+        cursor.execute(
+            "UPDATE usuarios SET rol = %s WHERE id = %s",
+            (plan_destino, usuario_id)
+        )
+        conexion.commit()
+ 
+        return {
+            "mensaje": "Plan actualizado exitosamente",
+            "plan_anterior": rol_actual,
+            "plan_nuevo": plan_destino
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        conexion.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+    finally:
+        cursor.close()
+        conexion.close()
+ 
+ 
+@router.delete("/usuarios/{usuario_id}/cancelar")
+def cancelar_cuenta(usuario_id: int):
+    """
+    Elimina completamente la cuenta del usuario:
+    favoritos, historial de búsquedas, historial de comparaciones y finalmente el usuario.
+    """
+    from database import conectar_base
+    conexion = conectar_base()
+    cursor = conexion.cursor()
+    try:
+        # Verificar que existe
+        cursor.execute("SELECT id FROM usuarios WHERE id = %s", (usuario_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+ 
+        # Eliminar datos relacionados en orden para respetar FK
+        cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
+        cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
+ 
+        # historial_comparaciones puede no existir en todos los proyectos; ignorar si falla
+        try:
+            cursor.execute(
+                "DELETE FROM historial_comparaciones WHERE usuario_id = %s", (usuario_id,)
+            )
+        except Exception:
+            conexion.rollback()
+            # Re-iniciar transacción sin la tabla opcional
+            cursor.execute("DELETE FROM favoritos WHERE usuario_id = %s", (usuario_id,))
+            cursor.execute("DELETE FROM historial_busquedas WHERE usuario_id = %s", (usuario_id,))
+ 
+        # Eliminar el usuario
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
+        conexion.commit()
+ 
+        return {"mensaje": "Cuenta eliminada exitosamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conexion.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al eliminar cuenta: {str(e)}")
+    finally:
+        cursor.close()
+        conexion.close()
