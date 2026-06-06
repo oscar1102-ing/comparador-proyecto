@@ -348,7 +348,7 @@ function actualizarHeader() {
                        font-weight:600; transition:background 0.2s;"
                 onmouseover="this.style.background='#fee2e2'"
                 onmouseout="this.style.background='#fff0f0'">
-                fidelizacionnn
+                fidelizacionnnrr
             </button>
             ${esAdmin ? '<a href="admin.html" class="btn-auth btn-admin">⚙️ Admin</a>' : ''}
             <a href="dashboard.html" class="btn-auth btn-cuenta">Mi cuenta</a>
